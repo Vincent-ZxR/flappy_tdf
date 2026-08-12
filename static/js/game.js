@@ -700,7 +700,7 @@ class FlappyTdfGame {
                 x: i * 75 + Math.random() * 20,
                 y: this.height - this.groundHeight,
                 height: 70 + Math.random() * 35,
-                type: i % 2 === 0 ? 'tree' : 'crowd'
+                type: 'crowd'
             });
         }
     }
@@ -1246,23 +1246,23 @@ class FlappyTdfGame {
 
     drawRoadsideDecor(x, y, height, type) {
         this.ctx.save();
-        if (type === 'crowd') {
-            this.ctx.fillStyle = '#94a3b8';
-            this.ctx.fillRect(x + 1, y - height + 28, 3, height - 28);
-            this.ctx.fillStyle = '#64748b';
-            this.ctx.beginPath();
-            this.ctx.arc(x + 5, y - height + 22, 7, 0, Math.PI * 2);
-            this.ctx.arc(x + 18, y - height + 24, 6, 0, Math.PI * 2);
-            this.ctx.arc(x + 29, y - height + 20, 8, 0, Math.PI * 2);
-            this.ctx.fill();
-        } else {
-            this.ctx.fillStyle = '#8b5a2b';
-            this.ctx.fillRect(x - 3, y - height, 6, height);
-            this.ctx.fillStyle = '#2ea44f';
-            this.ctx.beginPath();
-            this.ctx.arc(x, y - height, 16, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
+        this.ctx.fillStyle = '#64748b';
+        this.ctx.beginPath();
+        this.ctx.arc(x + 6, y - height + 22, 7, 0, Math.PI * 2);
+        this.ctx.arc(x + 18, y - height + 24, 6, 0, Math.PI * 2);
+        this.ctx.arc(x + 29, y - height + 20, 8, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = '#94a3b8';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 6, y - height + 28);
+        this.ctx.lineTo(x + 6, y - 16);
+        this.ctx.moveTo(x + 18, y - height + 30);
+        this.ctx.lineTo(x + 18, y - 14);
+        this.ctx.moveTo(x + 29, y - height + 28);
+        this.ctx.lineTo(x + 29, y - 18);
+        this.ctx.stroke();
         this.ctx.restore();
     }
 
@@ -1298,25 +1298,56 @@ class FlappyTdfGame {
 
         if (obs.topType === 'helicopter') {
             const wobble = Math.sin(obs.time * 0.15) * 6;
-            this.ctx.fillStyle = '#334155';
+            const helicopterX = centerX + wobble;
+            const helicopterY = currentTopHeight - 18;
+
+            // Cable to signal the helicopter is out of reach
+            this.ctx.strokeStyle = 'rgba(55, 65, 81, 0.7)';
+            this.ctx.lineWidth = 1.5;
+            this.ctx.setLineDash([3, 3]);
             this.ctx.beginPath();
-            this.ctx.ellipse(centerX + wobble, currentTopHeight - 18, 18, 8, 0, 0, Math.PI * 2);
+            this.ctx.moveTo(helicopterX, 0);
+            this.ctx.lineTo(helicopterX, helicopterY - 12);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
+
+            // Tail boom and rotor
+            this.ctx.strokeStyle = '#1f2937';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(helicopterX - 16, helicopterY);
+            this.ctx.lineTo(helicopterX - 32, helicopterY - 4);
+            this.ctx.moveTo(helicopterX - 30, helicopterY - 4);
+            this.ctx.lineTo(helicopterX - 42, helicopterY - 10);
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = '#374151';
+            this.ctx.beginPath();
+            this.ctx.ellipse(helicopterX, helicopterY, 18, 8, 0, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.fillStyle = '#93c5fd';
-            this.ctx.beginPath();
-            this.ctx.arc(centerX + wobble + 8, currentTopHeight - 18, 5, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.strokeStyle = '#334155';
+            this.ctx.fillRect(helicopterX - 2, helicopterY - 5, 10, 6);
+
+            this.ctx.strokeStyle = '#111827';
             this.ctx.lineWidth = 2;
             this.ctx.beginPath();
-            this.ctx.moveTo(centerX + wobble - 6, currentTopHeight - 25);
-            this.ctx.lineTo(centerX + wobble + 20, currentTopHeight - 25);
-            this.ctx.moveTo(centerX + wobble - 8, currentTopHeight - 16);
-            this.ctx.lineTo(centerX + wobble - 22, currentTopHeight - 6);
+            this.ctx.moveTo(helicopterX - 12, helicopterY - 12);
+            this.ctx.lineTo(helicopterX + 14, helicopterY - 12);
+            this.ctx.moveTo(helicopterX - 8, helicopterY - 15);
+            this.ctx.lineTo(helicopterX + 10, helicopterY - 9);
             this.ctx.stroke();
+
+            // Landing skids
+            this.ctx.beginPath();
+            this.ctx.moveTo(helicopterX - 10, helicopterY + 8);
+            this.ctx.lineTo(helicopterX - 16, helicopterY + 13);
+            this.ctx.moveTo(helicopterX + 6, helicopterY + 8);
+            this.ctx.lineTo(helicopterX + 12, helicopterY + 13);
+            this.ctx.stroke();
+
             this.ctx.fillStyle = '#ef4444';
             this.ctx.beginPath();
-            this.ctx.arc(centerX + wobble - 16, currentTopHeight - 4, 2, 0, Math.PI * 2);
+            this.ctx.arc(helicopterX - 18, helicopterY + 6, 2.2, 0, Math.PI * 2);
             this.ctx.fill();
         } else {
             this.ctx.strokeStyle = '#475569';
@@ -1349,13 +1380,17 @@ class FlappyTdfGame {
         this.ctx.stroke();
 
         this.ctx.fillStyle = '#dc2626';
-        this.ctx.fillRect(x - 11, currentBottomY + 8, 22, 34);
+        this.ctx.beginPath();
+        this.ctx.roundRect ? this.ctx.roundRect(x - 10, currentBottomY + 8, 20, 34, 6) : this.drawRoundedRect(x - 10, currentBottomY + 8, 20, 34, 6);
+        this.ctx.fill();
+
         this.ctx.fillStyle = '#111827';
         this.ctx.beginPath();
         this.ctx.arc(x, currentBottomY + 16, 4, 0, Math.PI * 2);
         this.ctx.arc(x, currentBottomY + 24, 4, 0, Math.PI * 2);
         this.ctx.arc(x, currentBottomY + 32, 4, 0, Math.PI * 2);
         this.ctx.fill();
+
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 1.5;
         this.ctx.beginPath();
@@ -1385,7 +1420,7 @@ class FlappyTdfGame {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(centerX - 5 + wobble, currentBottomY + 20, 10, 4);
+        this.ctx.fillRect(centerX - 5 + wobble, currentBottomY + 19, 10, 4);
         this.ctx.restore();
     }
 
@@ -1522,7 +1557,7 @@ class FlappyTdfGame {
         this.ctx.lineTo(x + 47, y + 27);
         this.ctx.lineTo(x + 31, y + 27);
         this.ctx.lineTo(x + 28, y + 18);
-        this.ctx.lineTo(x + 19, y + 14);
+        this.ctx.lineTo(x + 20, y + 15);
         this.ctx.stroke();
 
         this.ctx.strokeStyle = '#1f2937';
@@ -1546,7 +1581,7 @@ class FlappyTdfGame {
         this.ctx.lineTo(x + 21, y + 27);
         this.ctx.stroke();
 
-        // Rider body
+        // Rider body, a bit more upright than a pure sprinter tuck
         this.ctx.fillStyle = jersey;
         this.ctx.beginPath();
         this.ctx.roundRect ? this.ctx.roundRect(x + 18, y + 5, 22, 16, 7) : this.drawRoundedRect(x + 18, y + 5, 22, 16, 7);
@@ -1559,9 +1594,9 @@ class FlappyTdfGame {
         this.ctx.lineWidth = 4;
         this.ctx.lineCap = 'round';
         this.ctx.beginPath();
-        this.ctx.moveTo(x + 31, y + 17);
-        this.ctx.lineTo(x + 38, y + 20);
-        this.ctx.lineTo(x + 46, y + 18);
+        this.ctx.moveTo(x + 31, y + 16);
+        this.ctx.lineTo(x + 37, y + 18);
+        this.ctx.lineTo(x + 44, y + 17);
         this.ctx.stroke();
 
         // Head / helmet
