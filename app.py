@@ -1,6 +1,7 @@
 import os
 import json
 from pathlib import Path
+from urllib import error, request
 from fastapi import FastAPI, Request, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +19,39 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 SCORES_FILE = BASE_DIR / "scores.json"
 USERS_FILE = BASE_DIR / "users.json"
+
+
+def get_storage_backend_name():
+    url = os.environ.get("SUPABASE_URL", "").strip()
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if url and key:
+        return "supabase"
+    return "local"
+
+
+def _supabase_request(method, table, payload=None, filters=None):
+    url = os.environ.get("SUPABASE_URL", "").strip()
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if not url or not key:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
+
+    endpoint = f"{url.rstrip('/')}/rest/v1/{table}"
+    headers = {
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    if filters:
+        params = "&".join(f"{name}=eq.{value}" for name, value in filters)
+        endpoint = f"{endpoint}?{params}"
+
+    data = None if payload is None else json.dumps(payload).encode("utf-8")
+    req = request.Request(endpoint, method=method, data=data, headers=headers)
+    with request.urlopen(req, timeout=15) as response:
+        body = response.read().decode("utf-8")
+        return json.loads(body) if body else []
 
 
 def get_user_email(request: Request) -> str:
@@ -46,21 +80,64 @@ def save_json_data(file_path: Path, data):
         print(f"Error saving {file_path} locally: {e}")
 
 
+def _load_supabase_json(key_name, default_val):
+    try:
+        rows = _supabase_request("GET", "app_state", filters=[("key", key_name)])
+        if not rows:
+            return default_val
+        first = rows[0]
+        value = first.get("value")
+        if value is None:
+            return default_val
+        return json.loads(value)
+    except Exception as exc:
+        print(f"Supabase read failed for {key_name}: {exc}")
+        return default_val
+
+
+def _save_supabase_json(key_name, data):
+    payload = {"key": key_name, "value": json.dumps(data)}
+    try:
+        rows = _supabase_request("GET", "app_state", filters=[("key", key_name)])
+        if rows:
+            row_id = rows[0].get("id")
+            if row_id is not None:
+                _supabase_request("PATCH", f"app_state?id=eq.{row_id}", payload={"key": key_name, "value": json.dumps(data)})
+                return
+        _supabase_request("POST", "app_state", payload=payload)
+    except Exception as exc:
+        print(f"Supabase write failed for {key_name}: {exc}")
+
+
 def load_scores():
+    if get_storage_backend_name() == "supabase":
+        result = _load_supabase_json("scores", [])
+        return result if isinstance(result, list) else []
+
     data = load_json_data(SCORES_FILE, [])
     return data if isinstance(data, list) else []
 
 
 def save_scores(scores):
+    if get_storage_backend_name() == "supabase":
+        _save_supabase_json("scores", scores)
+        return
     save_json_data(SCORES_FILE, scores)
 
 
 def load_users():
+    if get_storage_backend_name() == "supabase":
+        result = _load_supabase_json("users", {})
+        return result if isinstance(result, dict) else {}
+
     data = load_json_data(USERS_FILE, {})
     return data if isinstance(data, dict) else {}
 
 
 def save_users(users):
+    if get_storage_backend_name() == "supabase":
+        _save_supabase_json("users", users)
+        return
     save_json_data(USERS_FILE, users)
 
 @app.get("/", response_class=HTMLResponse)
