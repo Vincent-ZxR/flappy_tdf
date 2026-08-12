@@ -313,6 +313,7 @@ class FlappyH2Game {
         this.score = 0;
         this.bestScore = parseInt(localStorage.getItem('al_h2_best_score') || '0', 10);
         this.rechargeCount = 0;
+        this.playerId = this.getOrCreatePlayerId();
 
         // Load saved pseudo and animal avatar
         this.sessionPseudo = localStorage.getItem('al_h2_player_pseudo') || '';
@@ -369,9 +370,39 @@ class FlappyH2Game {
         this.loop();
     }
 
+    getOrCreatePlayerId() {
+        const key = 'al_h2_player_id';
+        const existing = localStorage.getItem(key);
+        if (existing) return existing;
+
+        let generated = '';
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            generated = window.crypto.randomUUID().replace(/-/g, '');
+        } else {
+            generated = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 14)}`;
+        }
+
+        localStorage.setItem(key, generated);
+        return generated;
+    }
+
+    getApiHeaders(includeJsonContentType = false) {
+        const headers = {
+            'x-player-id': this.playerId
+        };
+
+        if (includeJsonContentType) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        return headers;
+    }
+
     async fetchUserProfile() {
         try {
-            const res = await fetch('/api/me');
+            const res = await fetch('/api/me', {
+                headers: this.getApiHeaders(false)
+            });
             if (res.ok) {
                 const data = await res.json();
                 this.userEmail = data.email || '';
@@ -562,7 +593,9 @@ class FlappyH2Game {
         this.leaderboardList.innerHTML = '<li class="loading">Chargement du classement...</li>';
 
         try {
-            const res = await fetch('/api/scores');
+            const res = await fetch('/api/scores', {
+                headers: this.getApiHeaders(false)
+            });
             if (!res.ok) throw new Error('Network response error');
             const data = await res.json();
 
@@ -627,7 +660,7 @@ class FlappyH2Game {
         try {
             await fetch('/api/scores', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getApiHeaders(true),
                 body: JSON.stringify({
                     pseudo: pseudo,
                     avatar: this.selectedEmoji,
@@ -688,7 +721,7 @@ class FlappyH2Game {
         try {
             const res = await fetch('/api/user/pseudo', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getApiHeaders(true),
                 body: JSON.stringify({
                     pseudo: inputVal,
                     avatar: this.selectedEmoji

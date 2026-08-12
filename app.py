@@ -1,7 +1,8 @@
 import os
 import json
+import re
 from pathlib import Path
-from urllib import error, request
+from urllib import request
 from fastapi import FastAPI, Request, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -19,6 +20,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 SCORES_FILE = BASE_DIR / "scores.json"
 USERS_FILE = BASE_DIR / "users.json"
+
+PLAYER_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{8,64}$")
 
 
 def get_storage_backend_name():
@@ -58,6 +61,11 @@ def get_user_email(request: Request) -> str:
     dev_email = request.headers.get("x-user-email") or request.query_params.get("email") or ""
     if dev_email:
         return dev_email.strip().lower()
+
+    player_id = request.headers.get("x-player-id") or request.query_params.get("player_id") or ""
+    player_id = player_id.strip()
+    if PLAYER_ID_PATTERN.match(player_id):
+        return f"player_{player_id.lower()}@anon.local"
 
     return "guest@local.dev"
 
