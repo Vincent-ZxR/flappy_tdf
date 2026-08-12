@@ -1,69 +1,34 @@
 import os
 import json
-import warnings
 from pathlib import Path
 from fastapi import FastAPI, Request, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 
-# Suppress Google Auth end-user quota project warning in local dev
-warnings.filterwarnings("ignore", message=".*authenticated using end user credentials.*", category=UserWarning)
+BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="H2 Flappy Truck - Air Liquide Edition")
 
 # Mount static files directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 # Setup Jinja2 templates
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-SCORES_FILE = Path("scores.json")
-USERS_FILE = Path("users.json")
-GCS_SCORES_BLOB = "scores.json"
-GCS_USERS_BLOB = "users.json"
+SCORES_FILE = BASE_DIR / "scores.json"
+USERS_FILE = BASE_DIR / "users.json"
 
-# Activate GCS only when explicitly set in env or when running on Cloud Run (K_SERVICE set)
-GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
-if not GCS_BUCKET_NAME and os.environ.get("K_SERVICE"):
-    GCS_BUCKET_NAME = "g-20251029-319565614788-flappy-h2-storage"
-
-gcs_client = None
-if GCS_BUCKET_NAME:
-    try:
-        from google.cloud import storage
-        gcs_client = storage.Client()
-    except Exception as e:
-        print(f"Google Cloud Storage client not initialized: {e}")
 
 def get_user_email(request: Request) -> str:
-    # 1. Header from GCP IAP (Identity-Aware Proxy)
-    for hdr in ["x-goog-authenticated-user-email", "X-Goog-Authenticated-User-Email"]:
-        email_hdr = request.headers.get(hdr) or ""
-        if email_hdr:
-            if ":" in email_hdr:
-                email_hdr = email_hdr.split(":")[-1]
-            return email_hdr.strip().lower()
-
-    # 2. Header or query param for testing / local dev
     dev_email = request.headers.get("x-user-email") or request.query_params.get("email") or ""
     if dev_email:
         return dev_email.strip().lower()
 
-    # 3. Fallback for local development
-    return "hubert.lam@airliquide.com"
+    return "guest@local.dev"
 
-def load_json_data(file_path: Path, gcs_blob_name: str, default_val):
-    if gcs_client and GCS_BUCKET_NAME:
-        try:
-            bucket = gcs_client.bucket(GCS_BUCKET_NAME)
-            blob = bucket.blob(gcs_blob_name)
-            if blob.exists():
-                content = blob.download_as_text(encoding="utf-8")
-                return json.loads(content)
-        except Exception as e:
-            print(f"Error loading {gcs_blob_name} from GCS: {e}")
 
+def load_json_data(file_path: Path, default_val):
     if not file_path.exists():
         return default_val
     try:
@@ -72,37 +37,31 @@ def load_json_data(file_path: Path, gcs_blob_name: str, default_val):
     except Exception:
         return default_val
 
-def save_json_data(file_path: Path, gcs_blob_name: str, data):
+
+def save_json_data(file_path: Path, data):
     try:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"Error saving {file_path} locally: {e}")
 
-    if gcs_client and GCS_BUCKET_NAME:
-        try:
-            bucket = gcs_client.bucket(GCS_BUCKET_NAME)
-            blob = bucket.blob(gcs_blob_name)
-            blob.upload_from_string(
-                json.dumps(data, ensure_ascii=False, indent=2),
-                content_type="application/json"
-            )
-        except Exception as e:
-            print(f"Error saving {gcs_blob_name} to GCS: {e}")
 
 def load_scores():
-    data = load_json_data(SCORES_FILE, GCS_SCORES_BLOB, [])
+    data = load_json_data(SCORES_FILE, [])
     return data if isinstance(data, list) else []
 
+
 def save_scores(scores):
-    save_json_data(SCORES_FILE, GCS_SCORES_BLOB, scores)
+    save_json_data(SCORES_FILE, scores)
+
 
 def load_users():
-    data = load_json_data(USERS_FILE, GCS_USERS_BLOB, {})
+    data = load_json_data(USERS_FILE, {})
     return data if isinstance(data, dict) else {}
 
+
 def save_users(users):
-    save_json_data(USERS_FILE, GCS_USERS_BLOB, users)
+    save_json_data(USERS_FILE, users)
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
