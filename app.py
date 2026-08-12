@@ -1,0 +1,240 @@
+import os
+import json
+import warnings
+from pathlib import Path
+from fastapi import FastAPI, Request, Body
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse
+
+# Suppress Google Auth end-user quota project warning in local dev
+warnings.filterwarnings("ignore", message=".*authenticated using end user credentials.*", category=UserWarning)
+
+app = FastAPI(title="H2 Flappy Truck - Air Liquide Edition")
+
+# Mount static files directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Setup Jinja2 templates
+templates = Jinja2Templates(directory="templates")
+
+SCORES_FILE = Path("scores.json")
+USERS_FILE = Path("users.json")
+GCS_SCORES_BLOB = "scores.json"
+GCS_USERS_BLOB = "users.json"
+
+# Activate GCS only when explicitly set in env or when running on Cloud Run (K_SERVICE set)
+GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
+if not GCS_BUCKET_NAME and os.environ.get("K_SERVICE"):
+    GCS_BUCKET_NAME = "g-20251029-319565614788-flappy-h2-storage"
+
+gcs_client = None
+if GCS_BUCKET_NAME:
+    try:
+        from google.cloud import storage
+        gcs_client = storage.Client()
+    except Exception as e:
+        print(f"Google Cloud Storage client not initialized: {e}")
+
+def get_user_email(request: Request) -> str:
+    # 1. Header from GCP IAP (Identity-Aware Proxy)
+    for hdr in ["x-goog-authenticated-user-email", "X-Goog-Authenticated-User-Email"]:
+        email_hdr = request.headers.get(hdr) or ""
+        if email_hdr:
+            if ":" in email_hdr:
+                email_hdr = email_hdr.split(":")[-1]
+            return email_hdr.strip().lower()
+
+    # 2. Header or query param for testing / local dev
+    dev_email = request.headers.get("x-user-email") or request.query_params.get("email") or ""
+    if dev_email:
+        return dev_email.strip().lower()
+
+    # 3. Fallback for local development
+    return "hubert.lam@airliquide.com"
+
+def load_json_data(file_path: Path, gcs_blob_name: str, default_val):
+    if gcs_client and GCS_BUCKET_NAME:
+        try:
+            bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+            blob = bucket.blob(gcs_blob_name)
+            if blob.exists():
+                content = blob.download_as_text(encoding="utf-8")
+                return json.loads(content)
+        except Exception as e:
+            print(f"Error loading {gcs_blob_name} from GCS: {e}")
+
+    if not file_path.exists():
+        return default_val
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default_val
+
+def save_json_data(file_path: Path, gcs_blob_name: str, data):
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving {file_path} locally: {e}")
+
+    if gcs_client and GCS_BUCKET_NAME:
+        try:
+            bucket = gcs_client.bucket(GCS_BUCKET_NAME)
+            blob = bucket.blob(gcs_blob_name)
+            blob.upload_from_string(
+                json.dumps(data, ensure_ascii=False, indent=2),
+                content_type="application/json"
+            )
+        except Exception as e:
+            print(f"Error saving {gcs_blob_name} to GCS: {e}")
+
+def load_scores():
+    data = load_json_data(SCORES_FILE, GCS_SCORES_BLOB, [])
+    return data if isinstance(data, list) else []
+
+def save_scores(scores):
+    save_json_data(SCORES_FILE, GCS_SCORES_BLOB, scores)
+
+def load_users():
+    data = load_json_data(USERS_FILE, GCS_USERS_BLOB, {})
+    return data if isinstance(data, dict) else {}
+
+def save_users(users):
+    save_json_data(USERS_FILE, GCS_USERS_BLOB, users)
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "air-liquide-h2-flappy-driver"}
+
+@app.get("/api/me")
+async def get_me(request: Request):
+    email = get_user_email(request)
+    users = load_users()
+    user_info = users.get(email, {})
+    return {
+        "email": email,
+        "pseudo": user_info.get("pseudo", ""),
+        "avatar": user_info.get("avatar", "🐼")
+    }
+
+@app.get("/api/scores")
+async def get_scores():
+    scores = load_scores()
+    valid_scores = [s for s in scores if s.get("score", 0) > 0]
+    sorted_scores = sorted(valid_scores, key=lambda x: x.get("score", 0), reverse=True)[:10]
+    return sorted_scores
+
+@app.post("/api/check-pseudo")
+async def check_pseudo(request: Request, payload: dict = Body(...)):
+    pseudo = payload.get("pseudo", "").strip()[:15]
+    current_email = get_user_email(request)
+
+    if not pseudo:
+        return JSONResponse({"available": False, "message": "Veuillez saisir un pseudo pour jouer !"})
+
+    users = load_users()
+    for email, profile in users.items():
+        if email != current_email and profile.get("pseudo", "").strip().lower() == pseudo.lower():
+            return {"available": False, "message": "Ce pseudo est déjà utilisé par un autre joueur !"}
+
+    return {"available": True}
+
+@app.post("/api/user/pseudo")
+async def update_user_pseudo(request: Request, payload: dict = Body(...)):
+    pseudo = payload.get("pseudo", "").strip()[:15]
+    avatar = payload.get("avatar", "🐼")
+    current_email = get_user_email(request)
+
+    if not pseudo:
+        return JSONResponse({"status": "error", "message": "Veuillez saisir un pseudo !"}, status_code=400)
+
+    # Reload fresh users list
+    users = load_users()
+    for email, profile in users.items():
+        if email.lower() != current_email and profile.get("pseudo", "").strip().lower() == pseudo.lower():
+            return JSONResponse({"status": "error", "message": "Ce pseudo est déjà utilisé par un autre joueur !"}, status_code=400)
+
+    # Save mapping
+    users[current_email] = {
+        "pseudo": pseudo,
+        "avatar": avatar
+    }
+    save_users(users)
+
+    # Update pseudo & avatar in scores leaderboard
+    scores = load_scores()
+    scores_updated = False
+    for item in scores:
+        item_email = (item.get("email") or "").strip().lower()
+        if item_email == current_email:
+            item["pseudo"] = pseudo
+            item["avatar"] = avatar
+            scores_updated = True
+
+    if scores_updated:
+        save_scores(scores)
+
+    return {"status": "success", "email": current_email, "pseudo": pseudo, "avatar": avatar}
+
+@app.post("/api/scores")
+async def add_score(request: Request, payload: dict = Body(...)):
+    pseudo = payload.get("pseudo", "").strip()[:15]
+    score = int(payload.get("score", 0))
+    recharges = int(payload.get("recharges", 0))
+    avatar = payload.get("avatar", "🐼")
+    current_email = get_user_email(request)
+
+    if not pseudo or score <= 0:
+        return JSONResponse({"status": "ignored", "reason": "Score invalide"})
+
+    # Ensure user mapping is updated
+    users = load_users()
+    users[current_email] = {
+        "pseudo": pseudo,
+        "avatar": avatar
+    }
+    save_users(users)
+
+    # Reload fresh scores from storage to prevent concurrent overwrite
+    scores = load_scores()
+    existing = False
+    for item in scores:
+        item_email = (item.get("email") or "").strip().lower()
+        item_pseudo = (item.get("pseudo") or "").strip().lower()
+
+        # Match primarily by email, or fallback to matching by pseudo if email was empty
+        if item_email == current_email or (not item_email and item_pseudo == pseudo.lower()):
+            existing = True
+            item["email"] = current_email
+            item["pseudo"] = pseudo
+            item["avatar"] = avatar
+            if score > item.get("score", 0):
+                item["score"] = score
+                item["recharges"] = recharges
+            break
+
+    if not existing:
+        scores.append({
+            "email": current_email,
+            "pseudo": pseudo,
+            "avatar": avatar,
+            "score": score,
+            "recharges": recharges
+        })
+
+    # Keep top 50 valid scores
+    scores = sorted([s for s in scores if s.get("score", 0) > 0], key=lambda x: x.get("score", 0), reverse=True)[:50]
+    save_scores(scores)
+
+    return {"status": "success", "leaderboard": scores[:10]}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)

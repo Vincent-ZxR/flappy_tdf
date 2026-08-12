@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Air Liquide - H2 Flappy Truck</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- Frame mimicking a mobile device display on desktop -->
+        <div class="mobile-frame">
+            <div class="screen-header">
+                <div class="brand-badge">
+                    <span class="al-blue">Air Liquide</span>
+                    <span class="h2-tag">H<sub>2</sub> Express</span>
+                </div>
+                <button id="sound-btn" class="sound-toggle" aria-label="Toggle sound">🔊</button>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="400" height="640"></canvas>
+
+                <!-- HUD Overlaid on Canvas -->
+                <div id="hud" class="hud hidden">
+                    <div class="score-container">
+                        <span class="score-label">SCORE</span>
+                        <span id="score-display">0</span>
+                    </div>
+
+                    <div class="fuel-container">
+                        <div class="fuel-header">
+                            <span>AUTONOMIE H<sub>2</sub></span>
+                            <span id="fuel-percentage">100%</span>
+                        </div>
+                        <div class="fuel-bar-bg">
+                            <div id="fuel-bar-fill" class="fuel-bar-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toast Alerts for Station Recharge, SMR Impact, and Mosquito Sting -->
+                <div id="recharge-toast" class="toast hidden">
+                    ⚡ RECHARGE H<sub>2</sub> : +10% !
+                </div>
+                <div id="overflow-toast" class="toast smr-toast hidden">
+                    💥 EXPLOSION ! RÉSERVOIR H<sub>2</sub> SURCHARGÉ (>100%) !
+                </div>
+                <div id="smr-toast" class="toast smr-toast hidden">
+                    ⚠️ IMPACT LINDE SMR : -50% AUTONOMIE H<sub>2</sub> !
+                </div>
+                <div id="mosquito-toast" class="toast smr-toast hidden">
+                    🦟 PIQÛRE DE MOUSTIQUE : VISION FLOUE (2s) !
+                </div>
+            </div>
+
+            <div class="controls-footer">
+                <span class="key-badge">ESPACE</span> ou <span class="key-badge">CLIC / TAP</span> pour voler
+            </div>
+
+            <!-- Start Screen Overlay (Covers entire mobile frame so header/footer don't obscure content) -->
+            <div id="start-screen" class="overlay">
+                <div class="logo-box">
+                    <div class="driver-avatar-badge" id="selected-avatar-badge">🐼🚛</div>
+                    <h1>AIR LIQUIDE</h1>
+                    <h2>H<sub>2</sub> FLAPPY TRUCK</h2>
+                    <p class="subtitle">Flappy Hydrogen Challenge</p>
+                </div>
+
+                <div class="pseudo-card">
+                    <label for="player-pseudo">👤 VOTRE PSEUDO / PILOTE :</label>
+                    <input type="text" id="player-pseudo" maxlength="15" placeholder="Entre ton pseudo" value="" autocomplete="off" />
+                    <div id="pseudo-error" class="pseudo-error hidden"></div>
+                </div>
+
+                <div class="animal-selection-card">
+                    <label>🐾 CHOISISSEZ VOTRE ANIMAL PILOTE :</label>
+                    <div class="animal-grid" id="animal-grid">
+                        <button class="animal-btn" data-animal="chat" data-emoji="🐱"><span class="animal-emoji">🐱</span><span class="animal-label">Chat</span></button>
+                        <button class="animal-btn" data-animal="chien" data-emoji="🐶"><span class="animal-emoji">🐶</span><span class="animal-label">Chien</span></button>
+                        <button class="animal-btn" data-animal="lapin" data-emoji="🐰"><span class="animal-emoji">🐰</span><span class="animal-label">Lapin</span></button>
+                        <button class="animal-btn" data-animal="poulet" data-emoji="🐔"><span class="animal-emoji">🐔</span><span class="animal-label">Poulet</span></button>
+                        <button class="animal-btn active" data-animal="panda" data-emoji="🐼"><span class="animal-emoji">🐼</span><span class="animal-label">Panda</span></button>
+                        <button class="animal-btn" data-animal="crabe" data-emoji="🦀"><span class="animal-emoji">🦀</span><span class="animal-label">Crabe</span></button>
+                        <button class="animal-btn" data-animal="grenouille" data-emoji="🐸"><span class="animal-emoji">🐸</span><span class="animal-label">Grenouille</span></button>
+                        <button class="animal-btn" data-animal="escargot" data-emoji="🐌"><span class="animal-emoji">🐌</span><span class="animal-label">Escargot</span></button>
+                        <button class="animal-btn" data-animal="tortue" data-emoji="🐢"><span class="animal-emoji">🐢</span><span class="animal-label">Tortue</span></button>
+                    </div>
+                </div>
+
+                <div class="instructions-card">
+                    <p><strong>RÈGLES DU JEU (JUNGLE EDITION) :</strong></p>
+                    <ul>
+                        <li>💨 <strong>Sauter</strong> : Espace, Clic ou Tap</li>
+                        <li>🚀 <strong>Accélération</strong> : +2.5% de vitesse par obstacle !</li>
+                        <li>⛽ <strong>Recharger H₂</strong> : +10% par station (Attention : >100% = 💥 explosion) !</li>
+                        <li>🐒🕷️ <strong>Éviter en haut</strong> : Singes & Araignées suspendus !</li>
+                        <li>🐍🐊🏭 <strong>Éviter en bas</strong> : Serpents, Crocodiles & Unités Linde SMR !</li>
+                        <li>🦟 <strong>Moustiques géants</strong> : Moustiques volants rapides !</li>
+                    </ul>
+                </div>
+
+                <div class="high-score-box">
+                    🏆 MEILLEUR SCORE : <span id="start-best-score">0</span>
+                </div>
+
+                <div class="button-group">
+                    <button id="start-btn" class="btn primary-btn">JOUER</button>
+                    <button id="leaderboard-btn" class="btn secondary-btn">🏆 CLASSEMENT</button>
+                </div>
+            </div>
+
+            <!-- Game Over Overlay -->
+            <div id="gameover-screen" class="overlay hidden">
+                <div class="gameover-card">
+                    <h2 class="gameover-title">PARTIE TERMINÉE</h2>
+                    
+                    <div class="reason-badge" id="death-reason">
+                        💥 Collision avec ASU Linde !
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-label">SCORE</span>
+                            <span class="stat-value" id="final-score">0</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">RECORD</span>
+                            <span class="stat-value" id="best-score">0</span>
+                        </div>
+                        <div class="stat-box full-width">
+                            <span class="stat-label">RECHARGES H<sub>2</sub></span>
+                            <span class="stat-value" id="recharge-count">0</span>
+                        </div>
+                    </div>
+
+                    <div class="gameover-buttons">
+                        <button id="restart-btn" class="btn primary-btn full-width-btn">RÉESSAYER</button>
+                        <div class="button-row">
+                            <button id="home-btn" class="btn secondary-btn">🏠 ACCUEIL</button>
+                            <button id="gameover-leaderboard-btn" class="btn secondary-btn">🏆 CLASSEMENT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Modal Overlay -->
+            <div id="leaderboard-screen" class="overlay hidden">
+                <div class="leaderboard-card">
+                    <h2 class="leaderboard-title">🏆 CLASSEMENT TOP 10</h2>
+                    <div class="leaderboard-list-container">
+                        <ol id="leaderboard-list" class="leaderboard-list">
+                            <li class="loading">Chargement...</li>
+                        </ol>
+                    </div>
+                    <button id="close-leaderboard-btn" class="btn primary-btn">RETOUR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/game.js"></script>
+</body>
+</html>
