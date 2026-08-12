@@ -319,11 +319,13 @@ class FlappyTdfGame {
             this.playerPseudoInput.value = this.sessionPseudo;
         }
 
-        this.selectedAnimal = localStorage.getItem('al_tdf_player_animal') || 'panda';
-        this.selectedEmoji = localStorage.getItem('al_tdf_player_emoji') || '🐼';
+        this.selectedTeam = localStorage.getItem('al_tdf_player_team') || 'uae';
+        this.selectedJerseyColor = localStorage.getItem('al_tdf_player_jersey') || '#111827';
+        this.selectedHelmetColor = localStorage.getItem('al_tdf_player_helmet') || '#00c7b1';
+        this.selectedHelmetEmoji = localStorage.getItem('al_tdf_player_helmet_emoji') || '🪖';
 
         // Set initial animal selection state
-        this.selectAnimal(this.selectedAnimal, this.selectedEmoji);
+        this.selectAnimal(this.selectedTeam, this.selectedHelmetEmoji);
 
         // Player (Cycliste)
         this.truck = {
@@ -418,8 +420,8 @@ class FlappyTdfGame {
                 }
                 if (data.avatar) {
                     const matchedBtn = Array.from(this.animalBtns || []).find(b => b.getAttribute('data-emoji') === data.avatar);
-                    const animalName = matchedBtn ? matchedBtn.getAttribute('data-animal') : 'panda';
-                    this.selectAnimal(animalName, data.avatar);
+                    const teamName = matchedBtn ? matchedBtn.getAttribute('data-animal') : 'uae';
+                    this.selectAnimal(teamName, data.avatar || '🪖');
                 }
             }
         } catch (e) {
@@ -427,15 +429,25 @@ class FlappyTdfGame {
         }
     }
 
-    selectAnimal(animal, emoji) {
-        this.selectedAnimal = animal;
-        this.selectedEmoji = emoji;
-        localStorage.setItem('al_tdf_player_animal', animal);
-        localStorage.setItem('al_tdf_player_emoji', emoji);
+    selectAnimal(team, helmetEmoji) {
+        this.selectedTeam = team;
+        this.selectedHelmetEmoji = helmetEmoji;
+
+        const button = Array.from(this.animalBtns || []).find(btn => btn.getAttribute('data-animal') === team);
+        const jerseyColor = button ? button.getAttribute('data-jersey') : '#111827';
+        const helmetColor = button ? button.getAttribute('data-helmet') : '#00c7b1';
+
+        this.selectedJerseyColor = jerseyColor;
+        this.selectedHelmetColor = helmetColor;
+
+        localStorage.setItem('al_tdf_player_team', team);
+        localStorage.setItem('al_tdf_player_helmet_emoji', helmetEmoji);
+        localStorage.setItem('al_tdf_player_jersey', jerseyColor);
+        localStorage.setItem('al_tdf_player_helmet', helmetColor);
 
         if (this.animalBtns) {
             this.animalBtns.forEach(btn => {
-                if (btn.getAttribute('data-animal') === animal) {
+                if (btn.getAttribute('data-animal') === team) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
@@ -444,7 +456,7 @@ class FlappyTdfGame {
         }
 
         if (this.selectedAvatarBadge) {
-            this.selectedAvatarBadge.textContent = this.selectedEmoji + '🚴';
+            this.selectedAvatarBadge.textContent = team.toUpperCase();
         }
     }
 
@@ -454,9 +466,9 @@ class FlappyTdfGame {
             this.animalBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const animal = btn.getAttribute('data-animal');
+                    const team = btn.getAttribute('data-animal');
                     const emoji = btn.getAttribute('data-emoji');
-                    this.selectAnimal(animal, emoji);
+                    this.selectAnimal(team, emoji);
                 });
             });
         }
@@ -609,12 +621,12 @@ class FlappyTdfGame {
                 if (idx === 2) li.classList.add('rank-3');
 
                 const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
-                const avatarEmoji = entry.avatar || '🐼';
+                const avatarLabel = String(entry.avatar || 'UAE').toUpperCase();
 
                 li.innerHTML = `
                     <div class="player-name">
                         <span>${medal}</span>
-                        <span>${avatarEmoji} ${this.escapeHtml(entry.pseudo)}</span>
+                        <span>${avatarLabel} ${this.escapeHtml(entry.pseudo)}</span>
                     </div>
                     <div class="player-score">${entry.score} km</div>
                 `;
@@ -660,7 +672,7 @@ class FlappyTdfGame {
                 headers: this.getApiHeaders(true),
                 body: JSON.stringify({
                     pseudo: pseudo,
-                    avatar: this.selectedEmoji,
+                    avatar: this.selectedTeam,
                     score: score,
                     recharges: recharges
                 })
@@ -681,14 +693,14 @@ class FlappyTdfGame {
             });
         }
 
-        // Roadside decor (village banners and trees)
+        // Roadside decor (trees and crowd silhouettes)
         this.roadsideDecor = [];
         for (let i = 0; i < 6; i++) {
             this.roadsideDecor.push({
                 x: i * 75 + Math.random() * 20,
                 y: this.height - this.groundHeight,
                 height: 70 + Math.random() * 35,
-                type: i % 2 === 0 ? 'tree' : 'banner'
+                type: i % 2 === 0 ? 'tree' : 'crowd'
             });
         }
     }
@@ -721,7 +733,7 @@ class FlappyTdfGame {
                 headers: this.getApiHeaders(true),
                 body: JSON.stringify({
                     pseudo: inputVal,
-                    avatar: this.selectedEmoji
+                    avatar: this.selectedTeam
                 })
             });
             const data = await res.json();
@@ -808,11 +820,11 @@ class FlappyTdfGame {
         const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
 
         // Top obstacle: spectator chaos
-        const topTypes = ['fan_flag', 'selfie_stick'];
+        const topTypes = ['camera', 'helicopter'];
         const selectedTopType = topTypes[Math.floor(Math.random() * topTypes.length)];
 
         // Bottom obstacle: road furniture
-        const bottomTypes = ['barrier', 'cone', 'road_sign'];
+        const bottomTypes = ['traffic_light', 'stem_cone', 'road_sign'];
         const selectedBottomType = bottomTypes[Math.floor(Math.random() * bottomTypes.length)];
 
         this.obstacles.push({
@@ -1018,9 +1030,9 @@ class FlappyTdfGame {
             // Top obstacle collision (spectator chaos)
             if (truckBox.right > obs.x && truckBox.left < obs.x + obs.width) {
                 if (truckBox.top < currentTopHeight) {
-                    let reason = "🎉 Heurte par un drapeau de spectateur !";
-                    if (obs.topType === 'selfie_stick') {
-                        reason = "📱 Collision avec un selfie stick !";
+                    let reason = "📷 Collision avec une camera de course !";
+                    if (obs.topType === 'helicopter') {
+                        reason = "🚁 Collision avec un helicoptere de course !";
                     }
                     this.gameOver(reason);
                     return;
@@ -1028,11 +1040,11 @@ class FlappyTdfGame {
 
                 // Bottom obstacle collision (road furniture)
                 if (truckBox.bottom > currentBottomY) {
-                    if (obs.bottomType === 'barrier') {
-                        this.gameOver("🚧 Collision avec une barriere de sprint !");
+                    if (obs.bottomType === 'traffic_light') {
+                        this.gameOver("🚦 Collision avec un feu rouge !");
                         return;
-                    } else if (obs.bottomType === 'cone') {
-                        this.gameOver("🧡 Chute sur un cone de signalisation !");
+                    } else if (obs.bottomType === 'stem_cone') {
+                        this.gameOver("🟧 Chute sur un plot de signalisation !");
                         return;
                     } else if (obs.bottomType === 'road_sign') {
                         this.gameOver("🪧 Chute apres choc avec un panneau !");
@@ -1066,7 +1078,7 @@ class FlappyTdfGame {
                     Math.abs(truckCenterY - (st.y + st.height / 2)) < 38) {
                     st.collected = true;
 
-                    const refill = st.type === 'bidon' ? 22 : 12;
+                    const refill = st.type === 'bidon' ? 20 : 10;
                     this.truck.fuel = Math.min(100, this.truck.fuel + refill);
                     this.rechargeCount++;
                     this.audio.playRecharge();
@@ -1159,15 +1171,15 @@ class FlappyTdfGame {
             const bottomMove = Math.cos(obs.time * obs.freqBottom) * obs.ampBottom;
             const currentBottomY = obs.bottomY + bottomMove;
 
-            if (obs.topType === 'fan_flag') {
+            if (obs.topType === 'camera') {
                 this.drawFanFlag(obs, currentTopHeight);
             } else {
                 this.drawSelfieStick(obs, currentTopHeight);
             }
 
-            if (obs.bottomType === 'barrier') {
+            if (obs.bottomType === 'traffic_light') {
                 this.drawRoadBarrier(obs, currentBottomY);
-            } else if (obs.bottomType === 'cone') {
+            } else if (obs.bottomType === 'stem_cone') {
                 this.drawRoadCone(obs, currentBottomY);
             } else {
                 this.drawRoadSign(obs, currentBottomY);
@@ -1234,14 +1246,15 @@ class FlappyTdfGame {
 
     drawRoadsideDecor(x, y, height, type) {
         this.ctx.save();
-        if (type === 'banner') {
-            this.ctx.fillStyle = '#1d4ed8';
-            this.ctx.fillRect(x - 2, y - height, 4, height);
-            this.ctx.fillStyle = '#facc15';
-            this.ctx.fillRect(x + 2, y - height + 8, 30, 16);
-            this.ctx.fillStyle = '#1e3a8a';
-            this.ctx.font = 'bold 8px Outfit, sans-serif';
-            this.ctx.fillText('TDF', x + 17, y - height + 20);
+        if (type === 'crowd') {
+            this.ctx.fillStyle = '#94a3b8';
+            this.ctx.fillRect(x + 1, y - height + 28, 3, height - 28);
+            this.ctx.fillStyle = '#64748b';
+            this.ctx.beginPath();
+            this.ctx.arc(x + 5, y - height + 22, 7, 0, Math.PI * 2);
+            this.ctx.arc(x + 18, y - height + 24, 6, 0, Math.PI * 2);
+            this.ctx.arc(x + 29, y - height + 20, 8, 0, Math.PI * 2);
+            this.ctx.fill();
         } else {
             this.ctx.fillStyle = '#8b5a2b';
             this.ctx.fillRect(x - 3, y - height, 6, height);
@@ -1282,38 +1295,73 @@ class FlappyTdfGame {
     drawSelfieStick(obs, currentTopHeight) {
         this.ctx.save();
         const centerX = obs.x + obs.width / 2;
-        this.ctx.strokeStyle = '#475569';
-        this.ctx.lineWidth = 4;
-        this.ctx.beginPath();
-        this.ctx.moveTo(centerX - 12, 0);
-        this.ctx.lineTo(centerX + 10, currentTopHeight - 12);
-        this.ctx.stroke();
 
-        this.ctx.fillStyle = '#111827';
-        this.ctx.fillRect(centerX + 2, currentTopHeight - 22, 14, 10);
-        this.ctx.fillStyle = '#93c5fd';
-        this.ctx.fillRect(centerX + 4, currentTopHeight - 20, 10, 6);
-        this.ctx.font = '18px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('📱', centerX - 4, currentTopHeight - 3);
+        if (obs.topType === 'helicopter') {
+            const wobble = Math.sin(obs.time * 0.15) * 6;
+            this.ctx.fillStyle = '#334155';
+            this.ctx.beginPath();
+            this.ctx.ellipse(centerX + wobble, currentTopHeight - 18, 18, 8, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillStyle = '#93c5fd';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + wobble + 8, currentTopHeight - 18, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#334155';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX + wobble - 6, currentTopHeight - 25);
+            this.ctx.lineTo(centerX + wobble + 20, currentTopHeight - 25);
+            this.ctx.moveTo(centerX + wobble - 8, currentTopHeight - 16);
+            this.ctx.lineTo(centerX + wobble - 22, currentTopHeight - 6);
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#ef4444';
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + wobble - 16, currentTopHeight - 4, 2, 0, Math.PI * 2);
+            this.ctx.fill();
+        } else {
+            this.ctx.strokeStyle = '#475569';
+            this.ctx.lineWidth = 4;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX - 12, 0);
+            this.ctx.lineTo(centerX + 10, currentTopHeight - 12);
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = '#111827';
+            this.ctx.fillRect(centerX + 2, currentTopHeight - 22, 14, 10);
+            this.ctx.fillStyle = '#93c5fd';
+            this.ctx.fillRect(centerX + 4, currentTopHeight - 20, 10, 6);
+            this.ctx.font = '18px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('📷', centerX - 4, currentTopHeight - 3);
+        }
         this.ctx.restore();
     }
 
     drawRoadBarrier(obs, currentBottomY) {
         this.ctx.save();
-        const x = obs.x + 3;
-        const w = obs.width - 6;
-        const h = this.height - this.groundHeight - currentBottomY;
-        this.ctx.fillStyle = '#ef4444';
-        this.ctx.fillRect(x, currentBottomY, w, h);
+        const x = obs.x + obs.width / 2;
+        const groundY = this.height - this.groundHeight;
+        this.ctx.strokeStyle = '#374151';
+        this.ctx.lineWidth = 4;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, groundY);
+        this.ctx.lineTo(x, currentBottomY + 8);
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = '#dc2626';
+        this.ctx.fillRect(x - 11, currentBottomY + 8, 22, 34);
+        this.ctx.fillStyle = '#111827';
+        this.ctx.beginPath();
+        this.ctx.arc(x, currentBottomY + 16, 4, 0, Math.PI * 2);
+        this.ctx.arc(x, currentBottomY + 24, 4, 0, Math.PI * 2);
+        this.ctx.arc(x, currentBottomY + 32, 4, 0, Math.PI * 2);
+        this.ctx.fill();
         this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 3;
-        for (let y = currentBottomY + 6; y < this.height - this.groundHeight; y += 14) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x + 4, y);
-            this.ctx.lineTo(x + w - 4, y + 6);
-            this.ctx.stroke();
-        }
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, currentBottomY + 8);
+        this.ctx.lineTo(x, currentBottomY + 42);
+        this.ctx.stroke();
         this.ctx.restore();
     }
 
@@ -1321,16 +1369,23 @@ class FlappyTdfGame {
         this.ctx.save();
         const centerX = obs.x + obs.width / 2;
         const groundY = this.height - this.groundHeight;
-        const topY = currentBottomY;
+        const wobble = Math.sin(obs.time * 0.18) * 4;
+        this.ctx.strokeStyle = '#475569';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX + wobble, groundY);
+        this.ctx.lineTo(centerX + wobble, currentBottomY + 12);
+        this.ctx.stroke();
+
         this.ctx.fillStyle = '#f97316';
         this.ctx.beginPath();
-        this.ctx.moveTo(centerX, topY);
-        this.ctx.lineTo(centerX - 22, groundY);
-        this.ctx.lineTo(centerX + 22, groundY);
+        this.ctx.moveTo(centerX + wobble, currentBottomY + 12);
+        this.ctx.lineTo(centerX - 8 + wobble, currentBottomY + 34);
+        this.ctx.lineTo(centerX + 8 + wobble, currentBottomY + 34);
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(centerX - 15, topY + 18, 30, 6);
+        this.ctx.fillRect(centerX - 5 + wobble, currentBottomY + 20, 10, 4);
         this.ctx.restore();
     }
 
@@ -1359,28 +1414,39 @@ class FlappyTdfGame {
         const y = st.y;
         const isBidon = st.type === 'bidon';
 
-        // Glowing pickup frame
+        // Musette sack
         this.ctx.shadowColor = isBidon ? '#3b82f6' : '#facc15';
         this.ctx.shadowBlur = 10;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.drawRoundedRect(x + 3, y + 10, st.width - 6, st.height - 14, 10);
+        this.ctx.fill();
+        this.ctx.stroke();
 
-        this.ctx.strokeStyle = isBidon ? '#1d4ed8' : '#eab308';
-        this.ctx.lineWidth = 2.5;
-        this.ctx.strokeRect(x, y, st.width, st.height);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 12, y + 10);
+        this.ctx.lineTo(x + 18, y + 2);
+        this.ctx.lineTo(x + 28, y + 2);
+        this.ctx.lineTo(x + 34, y + 10);
+        this.ctx.stroke();
 
-        this.ctx.fillStyle = isBidon ? 'rgba(59, 130, 246, 0.25)' : 'rgba(250, 204, 21, 0.25)';
-        this.ctx.fillRect(x, y, st.width, st.height);
+        this.ctx.fillStyle = isBidon ? 'rgba(37, 99, 235, 0.35)' : 'rgba(250, 204, 21, 0.35)';
+        this.ctx.fillRect(x + 8, y + 16, st.width - 16, st.height - 24);
 
-        this.ctx.fillStyle = isBidon ? '#1d4ed8' : '#b45309';
-        this.ctx.fillRect(x - 3, y - 8, st.width + 6, 12);
+        this.ctx.fillStyle = isBidon ? '#2563eb' : '#facc15';
+        this.ctx.fillRect(x + 10, y + 22, st.width - 20, 6);
 
         this.ctx.shadowBlur = 0;
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 7.5px Outfit, sans-serif';
+        this.ctx.font = 'bold 7px Outfit, sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(isBidon ? 'BIDON' : 'GEL', x + st.width / 2, y + 1);
+        this.ctx.fillText(isBidon ? 'BIDON' : 'GEL', x + st.width / 2, y + 14);
 
         this.ctx.font = '18px sans-serif';
-        this.ctx.fillText(isBidon ? '🧴' : '⚡', x + st.width / 2, y + st.height / 2 + 7);
+        this.ctx.fillText(isBidon ? '🧴' : '⚡', x + st.width / 2, y + st.height / 2 + 8);
 
         this.ctx.restore();
     }
@@ -1408,11 +1474,11 @@ class FlappyTdfGame {
         this.ctx.lineTo(this.width, gY + 38);
         this.ctx.stroke();
 
-        // Spectator confetti dots
+        // Crowd and road highlights
         this.ctx.setLineDash([]);
         for (let x = 10; x < this.width; x += 40) {
             const flowerX = (x - this.groundOffset * 2 + this.width * 2) % (this.width + 40) - 20;
-            this.ctx.fillStyle = x % 80 === 0 ? '#f43f5e' : '#3b82f6';
+            this.ctx.fillStyle = x % 80 === 0 ? '#f43f5e' : '#facc15';
             this.ctx.beginPath();
             this.ctx.arc(flowerX, gY + 4, 3, 0, Math.PI * 2);
             this.ctx.fill();
@@ -1439,51 +1505,99 @@ class FlappyTdfGame {
         const x = -t.width / 2;
         const y = -t.height / 2;
 
-        // Bike frame
-        this.ctx.strokeStyle = '#e11d48';
-        this.ctx.lineWidth = 3;
-        this.ctx.beginPath();
-        this.ctx.moveTo(x + 12, y + 24);
-        this.ctx.lineTo(x + 30, y + 18);
-        this.ctx.lineTo(x + 44, y + 24);
-        this.ctx.lineTo(x + 24, y + 24);
-        this.ctx.lineTo(x + 30, y + 18);
-        this.ctx.stroke();
+        const jersey = this.selectedJerseyColor || '#111827';
+        const helmet = this.selectedHelmetColor || '#00c7b1';
 
         // Wheels
-        this.drawWheel(x + 12, y + 28);
-        this.drawWheel(x + 44, y + 28);
+        this.drawWheel(x + 13, y + 27, 10);
+        this.drawWheel(x + 47, y + 27, 10);
 
-        // Handlebar and saddle
-        this.ctx.strokeStyle = '#1f2937';
-        this.ctx.lineWidth = 2;
+        // Bike frame inspired by pro road bikes
+        this.ctx.strokeStyle = '#f8fafc';
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
         this.ctx.beginPath();
-        this.ctx.moveTo(x + 44, y + 24);
-        this.ctx.lineTo(x + 50, y + 18);
-        this.ctx.moveTo(x + 26, y + 19);
-        this.ctx.lineTo(x + 20, y + 16);
+        this.ctx.moveTo(x + 13, y + 27);
+        this.ctx.lineTo(x + 28, y + 18);
+        this.ctx.lineTo(x + 47, y + 27);
+        this.ctx.lineTo(x + 31, y + 27);
+        this.ctx.lineTo(x + 28, y + 18);
+        this.ctx.lineTo(x + 19, y + 14);
         this.ctx.stroke();
 
-        // Rider emoji
-        this.ctx.font = '16px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(this.selectedEmoji || '🐼', x + 29, y + 10);
+        this.ctx.strokeStyle = '#1f2937';
+        this.ctx.lineWidth = 2.2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 47, y + 27);
+        this.ctx.lineTo(x + 53, y + 19);
+        this.ctx.lineTo(x + 57, y + 19);
+        this.ctx.moveTo(x + 28, y + 18);
+        this.ctx.lineTo(x + 21, y + 12);
+        this.ctx.stroke();
+
+        // Crank / pedals
+        this.ctx.strokeStyle = '#111827';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.arc(x + 28, y + 21, 4, 0, Math.PI * 2);
+        this.ctx.moveTo(x + 28, y + 21);
+        this.ctx.lineTo(x + 35, y + 27);
+        this.ctx.moveTo(x + 28, y + 21);
+        this.ctx.lineTo(x + 21, y + 27);
+        this.ctx.stroke();
+
+        // Rider body
+        this.ctx.fillStyle = jersey;
+        this.ctx.beginPath();
+        this.ctx.roundRect ? this.ctx.roundRect(x + 18, y + 5, 22, 16, 7) : this.drawRoundedRect(x + 18, y + 5, 22, 16, 7);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#cbd5e1';
+        this.ctx.fillRect(x + 23, y + 12, 12, 6);
+
+        // Bent rider pose
+        this.ctx.strokeStyle = '#f1c7ab';
+        this.ctx.lineWidth = 4;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 31, y + 17);
+        this.ctx.lineTo(x + 38, y + 20);
+        this.ctx.lineTo(x + 46, y + 18);
+        this.ctx.stroke();
+
+        // Head / helmet
+        this.ctx.fillStyle = '#f1c7ab';
+        this.ctx.beginPath();
+        this.ctx.arc(x + 43, y + 9, 6, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = helmet;
+        this.ctx.beginPath();
+        this.ctx.arc(x + 42, y + 7, 6, Math.PI, 0);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#111827';
+        this.ctx.beginPath();
+        this.ctx.arc(x + 46, y + 10, 1.2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Team stripe accent on jersey
+        this.ctx.fillStyle = '#f8fafc';
+        this.ctx.fillRect(x + 19, y + 10, 20, 2);
+        this.ctx.fillStyle = helmet;
+        this.ctx.fillRect(x + 19, y + 13, 20, 2);
 
         this.ctx.restore();
     }
 
-    drawWheel(wx, wy) {
+    drawWheel(wx, wy, radius = 5.5) {
         // Outer Tire
         this.ctx.fillStyle = '#1e293b';
         this.ctx.beginPath();
-        this.ctx.arc(wx, wy, 5.5, 0, Math.PI * 2);
+        this.ctx.arc(wx, wy, radius, 0, Math.PI * 2);
         this.ctx.fill();
 
         // Rim
         this.ctx.fillStyle = '#94a3b8';
         this.ctx.beginPath();
-        this.ctx.arc(wx, wy, 2.5, 0, Math.PI * 2);
+        this.ctx.arc(wx, wy, Math.max(2, radius * 0.45), 0, Math.PI * 2);
         this.ctx.fill();
     }
 

@@ -256,8 +256,19 @@ body {
 }
 
 .driver-avatar-badge {
-    font-size: 1.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255, 210, 63, 0.98), rgba(255, 255, 255, 0.92));
+    color: #1e293b;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
     margin-bottom: 0px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
     animation: float 2s infinite ease-in-out;
 }
 
@@ -500,6 +511,40 @@ body {
     border: 2px solid var(--al-blue-cyan);
     box-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
     transform: scale(1.04);
+}
+
+.animal-btn .animal-emoji {
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.18));
+}
+
+.animal-btn.team-uae.active {
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(0, 199, 177, 0.35));
+    border-color: #00c7b1;
+}
+
+.animal-btn.team-ef.active {
+    background: linear-gradient(135deg, rgba(255, 79, 163, 0.35), rgba(74, 79, 239, 0.35));
+    border-color: #ff4fa3;
+}
+
+.animal-btn.team-visma.active {
+    background: linear-gradient(135deg, rgba(247, 210, 26, 0.55), rgba(17, 17, 17, 0.5));
+    border-color: #f7d21a;
+}
+
+.animal-btn.team-ineos.active {
+    background: linear-gradient(135deg, rgba(122, 122, 122, 0.55), rgba(225, 29, 72, 0.25));
+    border-color: #e11d48;
+}
+
+.animal-btn.team-trek.active {
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.45), rgba(15, 76, 129, 0.45));
+    border-color: #0f4c81;
+}
+
+.animal-btn.team-soudal.active {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(239, 68, 68, 0.35));
+    border-color: #ef4444;
 }
 
 .animal-emoji {
