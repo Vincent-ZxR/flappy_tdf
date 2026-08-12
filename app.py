@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="H2 Flappy Truck - Air Liquide Edition")
+app = FastAPI(title="Flappy Velo - Chasse au Maillot Jaune")
 
 # Mount static files directory
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")

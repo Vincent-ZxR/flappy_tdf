@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Air Liquide - H2 Flappy Truck</title>
+    <title>Flappy Velo - Chasse au Maillot Jaune</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +15,8 @@
         <div class="mobile-frame">
             <div class="screen-header">
                 <div class="brand-badge">
-                    <span class="al-blue">Air Liquide</span>
-                    <span class="h2-tag">H<sub>2</sub> Express</span>
+                    <span class="al-blue">Tour de France</span>
+                    <span class="h2-tag">Maillot Jaune</span>
                 </div>
                 <button id="sound-btn" class="sound-toggle" aria-label="Toggle sound">🔊</button>
             </div>
@@ -27,13 +27,13 @@
                 <!-- HUD Overlaid on Canvas -->
                 <div id="hud" class="hud hidden">
                     <div class="score-container">
-                        <span class="score-label">SCORE</span>
+                        <span class="score-label">DISTANCE</span>
                         <span id="score-display">0</span>
                     </div>
 
                     <div class="fuel-container">
                         <div class="fuel-header">
-                            <span>AUTONOMIE H<sub>2</sub></span>
+                            <span>ENERGIE</span>
                             <span id="fuel-percentage">100%</span>
                         </div>
                         <div class="fuel-bar-bg">
@@ -42,42 +42,36 @@
                     </div>
                 </div>
 
-                <!-- Toast Alerts for Station Recharge, SMR Impact, and Mosquito Sting -->
+                <!-- Toast Alerts for pickup feedback -->
                 <div id="recharge-toast" class="toast hidden">
-                    ⚡ RECHARGE H<sub>2</sub> : +10% !
+                    ⚡ GEL ENERGETIQUE : +12% !
                 </div>
-                <div id="overflow-toast" class="toast smr-toast hidden">
-                    💥 EXPLOSION ! RÉSERVOIR H<sub>2</sub> SURCHARGÉ (>100%) !
-                </div>
-                <div id="smr-toast" class="toast smr-toast hidden">
-                    ⚠️ IMPACT LINDE SMR : -50% AUTONOMIE H<sub>2</sub> !
-                </div>
-                <div id="mosquito-toast" class="toast smr-toast hidden">
-                    🦟 PIQÛRE DE MOUSTIQUE : VISION FLOUE (2s) !
+                <div id="overflow-toast" class="toast pickup-toast hidden">
+                    🧴 BIDON RECUPERE : +22% !
                 </div>
             </div>
 
             <div class="controls-footer">
-                <span class="key-badge">ESPACE</span> ou <span class="key-badge">CLIC / TAP</span> pour voler
+                <span class="key-badge">ESPACE</span> ou <span class="key-badge">CLIC / TAP</span> pour relancer
             </div>
 
             <!-- Start Screen Overlay (Covers entire mobile frame so header/footer don't obscure content) -->
             <div id="start-screen" class="overlay">
                 <div class="logo-box">
-                    <div class="driver-avatar-badge" id="selected-avatar-badge">🐼🚛</div>
-                    <h1>AIR LIQUIDE</h1>
-                    <h2>H<sub>2</sub> FLAPPY TRUCK</h2>
-                    <p class="subtitle">Flappy Hydrogen Challenge</p>
+                    <div class="driver-avatar-badge" id="selected-avatar-badge">🐼🚴</div>
+                    <h1>TOUR DE FRANCE</h1>
+                    <h2>CHASSE AU MAILLOT JAUNE</h2>
+                    <p class="subtitle">Parcours le plus de kilometres possible</p>
                 </div>
 
                 <div class="pseudo-card">
-                    <label for="player-pseudo">👤 VOTRE PSEUDO / PILOTE :</label>
+                    <label for="player-pseudo">👤 VOTRE PSEUDO COUREUR :</label>
                     <input type="text" id="player-pseudo" maxlength="15" placeholder="Entre ton pseudo" value="" autocomplete="off" />
                     <div id="pseudo-error" class="pseudo-error hidden"></div>
                 </div>
 
                 <div class="animal-selection-card">
-                    <label>🐾 CHOISISSEZ VOTRE ANIMAL PILOTE :</label>
+                    <label>🐾 CHOISISSEZ VOTRE MASCOTTE :</label>
                     <div class="animal-grid" id="animal-grid">
                         <button class="animal-btn" data-animal="chat" data-emoji="🐱"><span class="animal-emoji">🐱</span><span class="animal-label">Chat</span></button>
                         <button class="animal-btn" data-animal="chien" data-emoji="🐶"><span class="animal-emoji">🐶</span><span class="animal-label">Chien</span></button>
@@ -92,23 +86,23 @@
                 </div>
 
                 <div class="instructions-card">
-                    <p><strong>RÈGLES DU JEU (JUNGLE EDITION) :</strong></p>
+                    <p><strong>REGLES DU JEU (EDITION MAILLOT JAUNE) :</strong></p>
                     <ul>
-                        <li>💨 <strong>Sauter</strong> : Espace, Clic ou Tap</li>
-                        <li>🚀 <strong>Accélération</strong> : +2.5% de vitesse par obstacle !</li>
-                        <li>⛽ <strong>Recharger H₂</strong> : +10% par station (Attention : >100% = 💥 explosion) !</li>
-                        <li>🐒🕷️ <strong>Éviter en haut</strong> : Singes & Araignées suspendus !</li>
-                        <li>🐍🐊🏭 <strong>Éviter en bas</strong> : Serpents, Crocodiles & Unités Linde SMR !</li>
-                        <li>🦟 <strong>Moustiques géants</strong> : Moustiques volants rapides !</li>
+                        <li>💨 <strong>Relancer</strong> : Espace, Clic ou Tap</li>
+                        <li>🚴 <strong>Objectif</strong> : parcourir le plus de km possible</li>
+                        <li>⚡ <strong>Gel</strong> : +12% d energie</li>
+                        <li>🧴 <strong>Bidon</strong> : +22% d energie</li>
+                        <li>🚧 <strong>Eviter le mobilier</strong> : barrieres, cones et panneaux</li>
+                        <li>🎉 <strong>Eviter la foule</strong> : drapeaux et selfies trop proches</li>
                     </ul>
                 </div>
 
                 <div class="high-score-box">
-                    🏆 MEILLEUR SCORE : <span id="start-best-score">0</span>
+                    🏆 MEILLEURE DISTANCE : <span id="start-best-score">0</span> km
                 </div>
 
                 <div class="button-group">
-                    <button id="start-btn" class="btn primary-btn">JOUER</button>
+                    <button id="start-btn" class="btn primary-btn">PRENDRE LE DEPART</button>
                     <button id="leaderboard-btn" class="btn secondary-btn">🏆 CLASSEMENT</button>
                 </div>
             </div>
@@ -119,26 +113,26 @@
                     <h2 class="gameover-title">PARTIE TERMINÉE</h2>
                     
                     <div class="reason-badge" id="death-reason">
-                        💥 Collision avec ASU Linde !
+                        💥 Chute sur incident de course !
                     </div>
 
                     <div class="stats-grid">
                         <div class="stat-box">
-                            <span class="stat-label">SCORE</span>
-                            <span class="stat-value" id="final-score">0</span>
+                            <span class="stat-label">DISTANCE</span>
+                            <span class="stat-value" id="final-score">0 km</span>
                         </div>
                         <div class="stat-box">
                             <span class="stat-label">RECORD</span>
-                            <span class="stat-value" id="best-score">0</span>
+                            <span class="stat-value" id="best-score">0 km</span>
                         </div>
                         <div class="stat-box full-width">
-                            <span class="stat-label">RECHARGES H<sub>2</sub></span>
+                            <span class="stat-label">RAVITAILLEMENTS</span>
                             <span class="stat-value" id="recharge-count">0</span>
                         </div>
                     </div>
 
                     <div class="gameover-buttons">
-                        <button id="restart-btn" class="btn primary-btn full-width-btn">RÉESSAYER</button>
+                        <button id="restart-btn" class="btn primary-btn full-width-btn">REPARTIR</button>
                         <div class="button-row">
                             <button id="home-btn" class="btn secondary-btn">🏠 ACCUEIL</button>
                             <button id="gameover-leaderboard-btn" class="btn secondary-btn">🏆 CLASSEMENT</button>
@@ -150,7 +144,7 @@
             <!-- Leaderboard Modal Overlay -->
             <div id="leaderboard-screen" class="overlay hidden">
                 <div class="leaderboard-card">
-                    <h2 class="leaderboard-title">🏆 CLASSEMENT TOP 10</h2>
+                    <h2 class="leaderboard-title">🏆 TOP 10 MAILLOT JAUNE</h2>
                     <div class="leaderboard-list-container">
                         <ol id="leaderboard-list" class="leaderboard-list">
                             <li class="loading">Chargement...</li>

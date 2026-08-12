@@ -1,5 +1,5 @@
 /**
- * Air Liquide - H2 Panda Flappy Truck
+ * Flappy Velo - Chasse au Maillot Jaune
  * HTML5 Canvas Game Engine
  */
 
@@ -61,7 +61,7 @@ class SoundEngine {
         osc.start(now);
         osc.stop(now + 0.14);
 
-        // Gas Hiss noise (Propulsion Hydrogène Psssh!)
+        // Windy whoosh accent
         if (this.noiseBuffer) {
             const noiseSource = this.ctx.createBufferSource();
             noiseSource.buffer = this.noiseBuffer;
@@ -92,7 +92,7 @@ class SoundEngine {
 
         const now = this.ctx.currentTime;
 
-        // Gas filling pressure noise (Remplissage H2)
+        // Pickup shimmer noise
         if (this.noiseBuffer) {
             const noiseSource = this.ctx.createBufferSource();
             noiseSource.buffer = this.noiseBuffer;
@@ -196,7 +196,7 @@ class SoundEngine {
         this.bgMusicPlaying = true;
         this.musicStep = 0;
 
-        // Upbeat chiptune Air Liquide melody notes
+        // Upbeat race-day melody notes
         const C4 = 261.63, E4 = 329.63, G4 = 392.00, A4 = 440.00, B4 = 493.88, C5 = 523.25, D5 = 587.33, E5 = 659.25, G5 = 783.99;
         const melody = [
             C4, E4, G4, C5,  E5, G4, C5, E5,
@@ -265,7 +265,7 @@ class SoundEngine {
     }
 }
 
-class FlappyH2Game {
+class FlappyTdfGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
@@ -291,9 +291,7 @@ class FlappyH2Game {
         this.startBestScoreDisplay = document.getElementById('start-best-score');
         this.rechargeCountDisplay = document.getElementById('recharge-count');
         this.rechargeToast = document.getElementById('recharge-toast');
-        this.overflowToast = document.getElementById('overflow-toast');
-        this.smrToast = document.getElementById('smr-toast');
-        this.mosquitoToast = document.getElementById('mosquito-toast');
+        this.bidonToast = document.getElementById('overflow-toast');
         this.blurTimeout = null;
         this.soundBtn = document.getElementById('sound-btn');
 
@@ -311,23 +309,23 @@ class FlappyH2Game {
 
         this.state = 'START'; // START, PLAYING, GAMEOVER
         this.score = 0;
-        this.bestScore = parseInt(localStorage.getItem('al_h2_best_score') || '0', 10);
+        this.bestScore = parseInt(localStorage.getItem('al_tdf_best_score') || '0', 10);
         this.rechargeCount = 0;
         this.playerId = this.getOrCreatePlayerId();
 
         // Load saved pseudo and animal avatar
-        this.sessionPseudo = localStorage.getItem('al_h2_player_pseudo') || '';
+        this.sessionPseudo = localStorage.getItem('al_tdf_player_pseudo') || '';
         if (this.sessionPseudo && this.playerPseudoInput) {
             this.playerPseudoInput.value = this.sessionPseudo;
         }
 
-        this.selectedAnimal = localStorage.getItem('al_h2_player_animal') || 'panda';
-        this.selectedEmoji = localStorage.getItem('al_h2_player_emoji') || '🐼';
+        this.selectedAnimal = localStorage.getItem('al_tdf_player_animal') || 'panda';
+        this.selectedEmoji = localStorage.getItem('al_tdf_player_emoji') || '🐼';
 
         // Set initial animal selection state
         this.selectAnimal(this.selectedAnimal, this.selectedEmoji);
 
-        // Player (Air Liquide Tanker Truck)
+        // Player (Cycliste)
         this.truck = {
             x: 80,
             y: 280,
@@ -338,7 +336,7 @@ class FlappyH2Game {
             jumpImpulse: -7.2,
             rotation: 0,
             fuel: 100,
-            fuelDepletionRate: 0.055 // Smooth fuel depletion (~30s per tank)
+            fuelDepletionRate: 0.06 // Drain d'energie regulier
         };
 
         // Environment & Speed
@@ -352,7 +350,6 @@ class FlappyH2Game {
         // Game Entities
         this.obstacles = [];
         this.h2Stations = [];
-        this.mosquitoes = [];
         this.particles = [];
         this.frameCount = 0;
         this.obstacleSpawnInterval = 140;
@@ -371,7 +368,7 @@ class FlappyH2Game {
     }
 
     getOrCreatePlayerId() {
-        const key = 'al_h2_player_id';
+        const key = 'al_tdf_player_id';
         const existing = localStorage.getItem(key);
         if (existing) return existing;
 
@@ -411,7 +408,7 @@ class FlappyH2Game {
                     if (this.playerPseudoInput) {
                         this.playerPseudoInput.value = data.pseudo;
                     }
-                    localStorage.setItem('al_h2_player_pseudo', data.pseudo);
+                    localStorage.setItem('al_tdf_player_pseudo', data.pseudo);
                 } else {
                     this.sessionPseudo = '';
                     if (this.playerPseudoInput) {
@@ -433,8 +430,8 @@ class FlappyH2Game {
     selectAnimal(animal, emoji) {
         this.selectedAnimal = animal;
         this.selectedEmoji = emoji;
-        localStorage.setItem('al_h2_player_animal', animal);
-        localStorage.setItem('al_h2_player_emoji', emoji);
+        localStorage.setItem('al_tdf_player_animal', animal);
+        localStorage.setItem('al_tdf_player_emoji', emoji);
 
         if (this.animalBtns) {
             this.animalBtns.forEach(btn => {
@@ -447,7 +444,7 @@ class FlappyH2Game {
         }
 
         if (this.selectedAvatarBadge) {
-            this.selectedAvatarBadge.textContent = this.selectedEmoji + '🚛';
+            this.selectedAvatarBadge.textContent = this.selectedEmoji + '🚴';
         }
     }
 
@@ -619,7 +616,7 @@ class FlappyH2Game {
                         <span>${medal}</span>
                         <span>${avatarEmoji} ${this.escapeHtml(entry.pseudo)}</span>
                     </div>
-                    <div class="player-score">${entry.score} pts</div>
+                    <div class="player-score">${entry.score} km</div>
                 `;
                 this.leaderboardList.appendChild(li);
             });
@@ -674,7 +671,7 @@ class FlappyH2Game {
     }
 
     initBackgroundElements() {
-        // Generate jungle mist clouds
+        // Cartoon clouds
         for (let i = 0; i < 5; i++) {
             this.clouds.push({
                 x: Math.random() * this.width,
@@ -684,14 +681,14 @@ class FlappyH2Game {
             });
         }
 
-        // Generate background jungle palm trees & giant foliage
-        this.jungleTrees = [];
+        // Roadside decor (village banners and trees)
+        this.roadsideDecor = [];
         for (let i = 0; i < 6; i++) {
-            this.jungleTrees.push({
+            this.roadsideDecor.push({
                 x: i * 75 + Math.random() * 20,
                 y: this.height - this.groundHeight,
                 height: 70 + Math.random() * 35,
-                type: i % 2 === 0 ? 'palm' : 'fern'
+                type: i % 2 === 0 ? 'tree' : 'banner'
             });
         }
     }
@@ -741,7 +738,7 @@ class FlappyH2Game {
         this.hidePseudoError();
         this.clearBlur();
         this.sessionPseudo = inputVal;
-        localStorage.setItem('al_h2_player_pseudo', inputVal);
+        localStorage.setItem('al_tdf_player_pseudo', inputVal);
 
         this.state = 'PLAYING';
         this.score = 0;
@@ -757,7 +754,6 @@ class FlappyH2Game {
 
         this.obstacles = [];
         this.h2Stations = [];
-        this.mosquitoes = [];
         this.particles = [];
         this.frameCount = 0;
 
@@ -777,15 +773,15 @@ class FlappyH2Game {
 
         if (this.score > this.bestScore) {
             this.bestScore = this.score;
-            localStorage.setItem('al_h2_best_score', this.bestScore.toString());
+            localStorage.setItem('al_tdf_best_score', this.bestScore.toString());
         }
 
         // Send score to leaderboard
         this.submitScore(this.score, this.rechargeCount);
 
         this.deathReason.textContent = reason;
-        this.finalScore.textContent = this.score;
-        this.bestScoreDisplay.textContent = this.bestScore;
+        this.finalScore.textContent = `${this.score} km`;
+        this.bestScoreDisplay.textContent = `${this.bestScore} km`;
         this.rechargeCountDisplay.textContent = this.rechargeCount;
 
         this.hud.classList.add('hidden');
@@ -811,12 +807,12 @@ class FlappyH2Game {
         const maxHeight = this.height - this.groundHeight - gap - minHeight;
         const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
 
-        // Top obstacle: vine_monkey or hanging_spider
-        const topTypes = ['vine_monkey', 'hanging_spider'];
+        // Top obstacle: spectator chaos
+        const topTypes = ['fan_flag', 'selfie_stick'];
         const selectedTopType = topTypes[Math.floor(Math.random() * topTypes.length)];
 
-        // Bottom obstacle: snake, linde_smr, or crocodile
-        const bottomTypes = ['snake', 'linde_smr', 'crocodile'];
+        // Bottom obstacle: road furniture
+        const bottomTypes = ['barrier', 'cone', 'road_sign'];
         const selectedBottomType = bottomTypes[Math.floor(Math.random() * bottomTypes.length)];
 
         this.obstacles.push({
@@ -832,12 +828,12 @@ class FlappyH2Game {
             ampTop: 6 + Math.random() * 4, // Gentle oscillation (6-10px)
             freqBottom: 0.03 + Math.random() * 0.015,
             ampBottom: 6 + Math.random() * 4, // Gentle oscillation (6-10px)
-            hitSMR: false,
             passed: false
         });
 
-        // Spawn Air Liquide H2 Refueling Station every ~2 obstacle gaps
+        // Spawn pickups in the center gap
         if (this.frameCount > 60 && Math.random() < 0.75) {
+            const pickupType = Math.random() < 0.65 ? 'gel' : 'bidon';
             this.h2Stations.push({
                 baseX: this.width + 110,
                 x: this.width + 110,
@@ -845,6 +841,7 @@ class FlappyH2Game {
                 y: topHeight + gap / 2 - 25,
                 width: 45,
                 height: 50,
+                type: pickupType,
                 time: Math.random() * 100,
                 freqY: 0.04,
                 ampY: 12,
@@ -878,30 +875,12 @@ class FlappyH2Game {
         }
     }
 
-    showSMRToast() {
-        if (this.smrToast) {
-            this.smrToast.classList.remove('hidden');
+    showBidonToast() {
+        if (this.bidonToast) {
+            this.bidonToast.classList.remove('hidden');
             setTimeout(() => {
-                if (this.smrToast) this.smrToast.classList.add('hidden');
-            }, 1800);
-        }
-    }
-
-    showOverflowToast() {
-        if (this.overflowToast) {
-            this.overflowToast.classList.remove('hidden');
-            setTimeout(() => {
-                if (this.overflowToast) this.overflowToast.classList.add('hidden');
-            }, 2200);
-        }
-    }
-
-    showMosquitoToast() {
-        if (this.mosquitoToast) {
-            this.mosquitoToast.classList.remove('hidden');
-            setTimeout(() => {
-                if (this.mosquitoToast) this.mosquitoToast.classList.add('hidden');
-            }, 2000);
+                if (this.bidonToast) this.bidonToast.classList.add('hidden');
+            }, 1700);
         }
     }
 
@@ -951,11 +930,11 @@ class FlappyH2Game {
             }
         });
 
-        if (this.jungleTrees) {
-            this.jungleTrees.forEach(tree => {
-                tree.x -= this.gameSpeed * 0.3;
-                if (tree.x < -60) {
-                    tree.x = this.width + 20 + Math.random() * 30;
+        if (this.roadsideDecor) {
+            this.roadsideDecor.forEach(item => {
+                item.x -= this.gameSpeed * 0.3;
+                if (item.x < -60) {
+                    item.x = this.width + 20 + Math.random() * 30;
                 }
             });
         }
@@ -979,18 +958,18 @@ class FlappyH2Game {
         // Rotation based on velocity
         this.truck.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 6, this.truck.velocity * 0.07));
 
-        // 2. Fuel Autonomie Mechanics
+        // 2. Energie
         this.truck.fuel -= this.truck.fuelDepletionRate;
         this.updateFuelBar();
 
         if (this.truck.fuel <= 0) {
-            this.gameOver("⚡ Panne d'hydrogène H₂ ! Pensez aux stations Air Liquide !");
+            this.gameOver("🥵 Coup de fringale: energie epuisee !");
             return;
         }
 
         // Check ground/sky collision
         if (this.truck.y + this.truck.height >= this.height - this.groundHeight) {
-            this.gameOver("💥 Crash dans la jungle !");
+            this.gameOver("💥 Chute sur le bas-cote !");
             return;
         }
         if (this.truck.y <= 0) {
@@ -1016,15 +995,15 @@ class FlappyH2Game {
             const bottomMove = Math.cos(obs.time * obs.freqBottom) * obs.ampBottom;
             const currentBottomY = obs.bottomY + bottomMove;
 
-            // Score increment & smooth speed progression (capped at 4.0)
+            // Score in km + speed curve progression
             if (!obs.passed && obs.x + obs.width < this.truck.x) {
                 obs.passed = true;
                 this.score++;
                 this.scoreDisplay.textContent = this.score.toString();
                 this.audio.playScore();
 
-                // Smooth speed acceleration capped at 8.0
-                this.gameSpeed = Math.min(8.0, this.gameSpeed * 1.025);
+                // +0.15 every 10 km, capped
+                this.gameSpeed = Math.min(5.2, this.baseGameSpeed + Math.floor(this.score / 10) * 0.15);
             }
 
             // Hitbox checks (forgiving padding)
@@ -1036,38 +1015,28 @@ class FlappyH2Game {
                 bottom: this.truck.y + this.truck.height - padding
             };
 
-            // Top Obstacle collision (Vine + Monkey OR Hanging Spider)
+            // Top obstacle collision (spectator chaos)
             if (truckBox.right > obs.x && truckBox.left < obs.x + obs.width) {
                 if (truckBox.top < currentTopHeight) {
-                    let reason = "🐒 Attaqué par le singe suspendu à sa liane !";
-                    if (obs.topType === 'hanging_spider' || obs.topType === 'spider') {
-                        reason = "🕷️ Attaqué par l'araignée géante de la jungle !";
+                    let reason = "🎉 Heurte par un drapeau de spectateur !";
+                    if (obs.topType === 'selfie_stick') {
+                        reason = "📱 Collision avec un selfie stick !";
                     }
                     this.gameOver(reason);
                     return;
                 }
 
-                // Bottom Obstacle collision (Snake / Crocodile / Linde SMR)
+                // Bottom obstacle collision (road furniture)
                 if (truckBox.bottom > currentBottomY) {
-                    if (obs.bottomType === 'snake') {
-                        this.gameOver("🐍 Mordu par le serpent géant de la jungle !");
+                    if (obs.bottomType === 'barrier') {
+                        this.gameOver("🚧 Collision avec une barriere de sprint !");
                         return;
-                    } else if (obs.bottomType === 'crocodile') {
-                        this.gameOver("🐊 Dévoré par le crocodile de la jungle !");
+                    } else if (obs.bottomType === 'cone') {
+                        this.gameOver("🧡 Chute sur un cone de signalisation !");
                         return;
-                    } else if (obs.bottomType === 'linde_smr') {
-                        if (!obs.hitSMR) {
-                            obs.hitSMR = true;
-                            this.truck.fuel = Math.max(0, this.truck.fuel * 0.5);
-                            this.updateFuelBar();
-                            this.audio.playHit();
-                            this.showSMRToast();
-
-                            if (this.truck.fuel <= 0) {
-                                this.gameOver("⚡ Stock d'hydrogène épuisé suite à l'impact avec l'Unité Linde SMR !");
-                                return;
-                            }
-                        }
+                    } else if (obs.bottomType === 'road_sign') {
+                        this.gameOver("🪧 Chute apres choc avec un panneau !");
+                        return;
                     }
                 }
             }
@@ -1078,47 +1047,7 @@ class FlappyH2Game {
             }
         }
 
-        // 4b. Spawn & Update Fast Flying Mosquitoes 🦟
-        if (this.frameCount % 150 === 0 && Math.random() < 0.75) {
-            this.mosquitoes.push({
-                x: this.width + 30,
-                y: 50 + Math.random() * (this.height - this.groundHeight - 110),
-                speed: this.gameSpeed * 1.55 + Math.random() * 0.6,
-                time: Math.random() * 100,
-                freq: 0.12,
-                amp: 12
-            });
-        }
-
-        for (let i = this.mosquitoes.length - 1; i >= 0; i--) {
-            const m = this.mosquitoes[i];
-            m.x -= m.speed;
-            m.time += 1;
-            const currentY = m.y + Math.sin(m.time * m.freq) * m.amp;
-
-            const padding = 6;
-            const truckBox = {
-                left: this.truck.x + padding,
-                right: this.truck.x + this.truck.width - padding,
-                top: this.truck.y + padding,
-                bottom: this.truck.y + this.truck.height - padding
-            };
-
-            if (truckBox.right > m.x - 12 && truckBox.left < m.x + 12 &&
-                truckBox.bottom > currentY - 12 && truckBox.top < currentY + 12) {
-                this.audio.playHit();
-                this.triggerBlur();
-                this.showMosquitoToast();
-                this.mosquitoes.splice(i, 1);
-                continue;
-            }
-
-            if (m.x < -50) {
-                this.mosquitoes.splice(i, 1);
-            }
-        }
-
-        // 5. Update Air Liquide H2 Stations & Recharging (+10% or Explosion if >100%)
+        // 5. Update pickups (Gel / Bidon)
         for (let i = this.h2Stations.length - 1; i >= 0; i--) {
             const st = this.h2Stations[i];
             st.time += 1;
@@ -1128,7 +1057,7 @@ class FlappyH2Game {
             st.x = st.baseX + Math.sin(st.time * st.freqX) * st.ampX;
             st.y = st.baseY + Math.cos(st.time * st.freqY) * st.ampY;
 
-            // Collision with H2 Station portal
+            // Collision with pickup
             if (!st.collected) {
                 const truckCenterX = this.truck.x + this.truck.width / 2;
                 const truckCenterY = this.truck.y + this.truck.height / 2;
@@ -1137,20 +1066,15 @@ class FlappyH2Game {
                     Math.abs(truckCenterY - (st.y + st.height / 2)) < 38) {
                     st.collected = true;
 
-                    const newFuel = this.truck.fuel + 10;
-                    if (newFuel > 100) {
-                        this.truck.fuel = 100;
-                        this.updateFuelBar();
-                        this.audio.playHit();
-                        this.showOverflowToast();
-                        this.gameOver("💥 Explosion du réservoir ! Surcharge d'hydrogène (>100%) !");
-                        return;
-                    }
-
-                    this.truck.fuel = newFuel;
+                    const refill = st.type === 'bidon' ? 22 : 12;
+                    this.truck.fuel = Math.min(100, this.truck.fuel + refill);
                     this.rechargeCount++;
                     this.audio.playRecharge();
-                    this.showRechargeToast();
+                    if (st.type === 'bidon') {
+                        this.showBidonToast();
+                    } else {
+                        this.showRechargeToast();
+                    }
 
                     // Sparkle particles
                     for (let p = 0; p < 15; p++) {
@@ -1160,7 +1084,7 @@ class FlappyH2Game {
                             vx: (Math.random() - 0.5) * 6,
                             vy: (Math.random() - 0.5) * 6,
                             radius: Math.random() * 4 + 2,
-                            color: '#00d2ff',
+                            color: st.type === 'bidon' ? '#3b82f6' : '#facc15',
                             life: 25
                         });
                     }
@@ -1189,30 +1113,29 @@ class FlappyH2Game {
     render() {
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // 1. Tropical Jungle Background Gradient
+        // 1. Cartoon stage sky
         const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        skyGrad.addColorStop(0, '#022c22');
-        skyGrad.addColorStop(0.4, '#064e3b');
-        skyGrad.addColorStop(0.8, '#047857');
-        skyGrad.addColorStop(1, '#059669');
+        skyGrad.addColorStop(0, '#8fd3ff');
+        skyGrad.addColorStop(0.45, '#b8e6ff');
+        skyGrad.addColorStop(0.8, '#d9f2ff');
+        skyGrad.addColorStop(1, '#f8fbff');
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Filtered Sunlight Rays
+        // Soft mountain layers
         this.ctx.save();
-        this.ctx.fillStyle = 'rgba(255, 255, 200, 0.05)';
-        for (let r = 0; r < 4; r++) {
+        this.ctx.fillStyle = 'rgba(66, 153, 225, 0.2)';
+        for (let r = 0; r < 3; r++) {
             this.ctx.beginPath();
-            this.ctx.moveTo(r * 110 + 20, 0);
-            this.ctx.lineTo(r * 110 + 70, 0);
-            this.ctx.lineTo(r * 110 + 130, this.height);
-            this.ctx.lineTo(r * 110 + 50, this.height);
+            this.ctx.moveTo(r * 150 - 30, this.height - this.groundHeight - 110);
+            this.ctx.lineTo(r * 150 + 60, this.height - this.groundHeight - 200);
+            this.ctx.lineTo(r * 150 + 150, this.height - this.groundHeight - 110);
             this.ctx.fill();
         }
         this.ctx.restore();
 
-        // Tropical Mist Clouds
-        this.ctx.fillStyle = 'rgba(167, 243, 208, 0.2)';
+        // Clouds
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         this.clouds.forEach(cloud => {
             this.ctx.beginPath();
             this.ctx.arc(cloud.x, cloud.y, cloud.radius, 0, Math.PI * 2);
@@ -1221,10 +1144,10 @@ class FlappyH2Game {
             this.ctx.fill();
         });
 
-        // Background Jungle Palm Trees & Giant Ferns
-        if (this.jungleTrees) {
-            this.jungleTrees.forEach(t => {
-                this.drawJungleTree(t.x, t.y, t.height, t.type);
+        // Roadside decor
+        if (this.roadsideDecor) {
+            this.roadsideDecor.forEach(item => {
+                this.drawRoadsideDecor(item.x, item.y, item.height, item.type);
             });
         }
 
@@ -1236,34 +1159,27 @@ class FlappyH2Game {
             const bottomMove = Math.cos(obs.time * obs.freqBottom) * obs.ampBottom;
             const currentBottomY = obs.bottomY + bottomMove;
 
-            if (obs.topType === 'vine_monkey') {
-                this.drawVineMonkey(obs, currentTopHeight);
+            if (obs.topType === 'fan_flag') {
+                this.drawFanFlag(obs, currentTopHeight);
             } else {
-                this.drawHangingSpider(obs, currentTopHeight);
+                this.drawSelfieStick(obs, currentTopHeight);
             }
 
-            if (obs.bottomType === 'snake') {
-                this.drawJungleSnake(obs, currentBottomY);
-            } else if (obs.bottomType === 'crocodile') {
-                this.drawCrocodile(obs, currentBottomY);
+            if (obs.bottomType === 'barrier') {
+                this.drawRoadBarrier(obs, currentBottomY);
+            } else if (obs.bottomType === 'cone') {
+                this.drawRoadCone(obs, currentBottomY);
             } else {
-                this.drawLindeSMR(obs, currentBottomY);
+                this.drawRoadSign(obs, currentBottomY);
             }
         });
 
-        // 2b. Draw Fast Mosquitoes 🦟
-        if (this.mosquitoes) {
-            this.mosquitoes.forEach(m => {
-                this.drawMosquito(m);
-            });
-        }
-
-        // 3. Draw Air Liquide H2 Refueling Stations
+        // 3. Draw pickups
         this.h2Stations.forEach(st => {
-            this.drawH2Station(st);
+            this.drawPickup(st);
         });
 
-        // 4. Draw Jungle Ground
+        // 4. Draw road
         this.drawGround();
 
         // 5. Draw Particles
@@ -1274,8 +1190,8 @@ class FlappyH2Game {
             this.ctx.fill();
         });
 
-        // 6. Draw Player (Air Liquide Tanker Truck & Panda)
-        this.drawAirLiquideTruck();
+        // 6. Draw player (cycliste)
+        this.drawCyclist();
     }
 
     drawRoundedRect(x, y, w, h, r) {
@@ -1316,432 +1232,155 @@ class FlappyH2Game {
         this.ctx.arc(x, y, Math.abs(rx), 0, Math.PI * 2);
     }
 
-    drawJungleTree(x, y, height, type) {
+    drawRoadsideDecor(x, y, height, type) {
         this.ctx.save();
-        this.ctx.fillStyle = 'rgba(6, 78, 59, 0.45)';
-
-        // Trunk
-        this.ctx.fillRect(x - 4, y - height, 8, height);
-
-        // Palm / Fern Leaves
-        const topY = y - height;
-        for (let l = 0; l < 5; l++) {
-            const angle = (l - 2) * 0.5 - Math.PI / 2;
+        if (type === 'banner') {
+            this.ctx.fillStyle = '#1d4ed8';
+            this.ctx.fillRect(x - 2, y - height, 4, height);
+            this.ctx.fillStyle = '#facc15';
+            this.ctx.fillRect(x + 2, y - height + 8, 30, 16);
+            this.ctx.fillStyle = '#1e3a8a';
+            this.ctx.font = 'bold 8px Outfit, sans-serif';
+            this.ctx.fillText('TDF', x + 17, y - height + 20);
+        } else {
+            this.ctx.fillStyle = '#8b5a2b';
+            this.ctx.fillRect(x - 3, y - height, 6, height);
+            this.ctx.fillStyle = '#2ea44f';
             this.ctx.beginPath();
-            this.drawEllipse(
-                x + Math.cos(angle) * 18,
-                topY + Math.sin(angle) * 12,
-                16, 6, angle
-            );
+            this.ctx.arc(x, y - height, 16, 0, Math.PI * 2);
             this.ctx.fill();
         }
         this.ctx.restore();
     }
 
-    drawVineMonkey(obs, currentTopHeight) {
+    drawFanFlag(obs, currentTopHeight) {
         this.ctx.save();
-        const x = obs.x;
-        const width = obs.width;
-        const vineX = x + width / 2;
+        const centerX = obs.x + obs.width / 2;
 
-        // Wavy Liana Vine hanging down from top to currentTopHeight
-        this.ctx.strokeStyle = '#15803d';
-        this.ctx.lineWidth = 4;
-        this.ctx.beginPath();
-        this.ctx.moveTo(vineX, 0);
-
-        const segments = 6;
-        const segmentHeight = currentTopHeight / segments;
-        for (let s = 1; s <= segments; s++) {
-            const waveX = vineX + Math.sin(s * 1.2 + obs.time * 0.08) * 8;
-            this.ctx.lineTo(waveX, s * segmentHeight);
-        }
-        this.ctx.stroke();
-
-        // Leaves along the vine
-        this.ctx.fillStyle = '#22c55e';
-        for (let l = 1; l < segments; l++) {
-            const leafY = l * segmentHeight;
-            const waveX = vineX + Math.sin(l * 1.2 + obs.time * 0.08) * 8;
-            this.ctx.beginPath();
-            this.ctx.arc(waveX - 6, leafY, 5, 0, Math.PI * 2);
-            this.ctx.arc(waveX + 6, leafY, 5, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
-
-        // Animated Monkey 🐒 hanging at the bottom of the vine
-        const monkeyY = currentTopHeight - 12;
-        const monkeyX = vineX + Math.sin(segments * 1.2 + obs.time * 0.08) * 8;
-
-        // Tail
-        this.ctx.strokeStyle = '#78350f';
+        this.ctx.strokeStyle = '#334155';
         this.ctx.lineWidth = 3;
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX - 10, monkeyY - 5, 8, 0, Math.PI);
-        this.ctx.stroke();
-
-        // Body
-        this.ctx.fillStyle = '#78350f';
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX, monkeyY, 12, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Head
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX, monkeyY - 10, 10, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Face mask (tan)
-        this.ctx.fillStyle = '#fde68a';
-        this.ctx.beginPath();
-        this.drawEllipse(monkeyX, monkeyY - 9, 7, 6, 0);
-        this.ctx.fill();
-
-        // Ears
-        this.ctx.fillStyle = '#78350f';
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX - 10, monkeyY - 12, 4, 0, Math.PI * 2);
-        this.ctx.arc(monkeyX + 10, monkeyY - 12, 4, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Eyes & Mouth
-        this.ctx.fillStyle = '#000000';
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX - 3, monkeyY - 11, 1.8, 0, Math.PI * 2);
-        this.ctx.arc(monkeyX + 3, monkeyY - 11, 1.8, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Smile
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 1.5;
-        this.ctx.beginPath();
-        this.ctx.arc(monkeyX, monkeyY - 7, 3, 0.1 * Math.PI, 0.9 * Math.PI);
-        this.ctx.stroke();
-
-        // Emoji overlay for crisp cute monkey expression 🐒
-        this.ctx.font = '22px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('🐒', monkeyX, monkeyY + 4);
-
-        this.ctx.restore();
-    }
-
-    drawHangingSpider(obs, currentTopHeight) {
-        this.ctx.save();
-        const x = obs.x;
-        const width = obs.width;
-        const centerX = x + width / 2;
-
-        // Spider Silk Thread hanging down from canopy y=0 to currentTopHeight
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.lineWidth = 1.5;
         this.ctx.beginPath();
         this.ctx.moveTo(centerX, 0);
-        this.ctx.lineTo(centerX, currentTopHeight - 10);
+        this.ctx.lineTo(centerX, currentTopHeight - 16);
         this.ctx.stroke();
 
-        const spiderY = currentTopHeight - 10;
-
-        // Spider 8 Legs
-        this.ctx.strokeStyle = '#3b0764';
-        this.ctx.lineWidth = 3;
-        for (let leg = 0; leg < 4; leg++) {
-            const side = leg < 2 ? -1 : 1;
-            const offsetL = (leg % 2) * 6;
-            const legWiggle = Math.sin(obs.time * 0.2 + leg) * 5;
-
-            this.ctx.beginPath();
-            this.ctx.moveTo(centerX, spiderY + offsetL);
-            this.ctx.lineTo(centerX + side * (20 + legWiggle), spiderY - 8 + offsetL);
-            this.ctx.lineTo(centerX + side * (24 + legWiggle), spiderY + 10 + offsetL);
-            this.ctx.stroke();
-        }
-
-        // Body
-        this.ctx.fillStyle = '#2e1065';
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, spiderY + 5, 12, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Head
-        this.ctx.fillStyle = '#3b0764';
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, spiderY - 3, 8, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Glowing Red Eyes (4 eyes)
-        this.ctx.fillStyle = '#f43f5e';
-        for (let eye = -1; eye <= 1; eye += 0.66) {
-            this.ctx.beginPath();
-            this.ctx.arc(centerX + eye * 4, spiderY - 4, 1.6, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
-
-        // Emoji accent 🕷️
-        this.ctx.font = '22px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('🕷️', centerX, spiderY + 10);
-
-        this.ctx.restore();
-    }
-
-    drawJungleSnake(obs, currentBottomY) {
-        this.ctx.save();
-        const x = obs.x;
-        const width = obs.width;
-        const groundY = this.height - this.groundHeight;
-        const height = groundY - currentBottomY;
-        const centerX = x + width / 2;
-
-        const snakeY = currentBottomY;
-
-        // Coiled Body up from ground
-        this.ctx.strokeStyle = '#15803d';
-        this.ctx.lineWidth = 14;
-        this.ctx.beginPath();
-        this.ctx.moveTo(centerX, groundY);
-
-        const segs = 5;
-        for (let s = 1; s <= segs; s++) {
-            const sy = groundY - (s / segs) * height;
-            const sx = centerX + Math.sin(s * 1.5 + obs.time * 0.1) * 12;
-            this.ctx.lineTo(sx, sy);
-        }
-        this.ctx.stroke();
-
-        // Yellow spots / pattern on snake body
-        this.ctx.strokeStyle = '#eab308';
-        this.ctx.lineWidth = 4;
-        this.ctx.setLineDash([6, 8]);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
-
-        // Cobra Head at snakeY
-        const headX = centerX + Math.sin(segs * 1.5 + obs.time * 0.1) * 12;
-
-        // Hood
-        this.ctx.fillStyle = '#166534';
-        this.ctx.beginPath();
-        this.drawEllipse(headX, snakeY + 6, 16, 12, 0);
-        this.ctx.fill();
-
-        // Head Triangle
-        this.ctx.fillStyle = '#15803d';
-        this.ctx.beginPath();
-        this.ctx.arc(headX, snakeY, 10, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Red Eyes
+        const wave = Math.sin(obs.time * 0.18) * 8;
         this.ctx.fillStyle = '#ef4444';
         this.ctx.beginPath();
-        this.ctx.arc(headX - 4, snakeY - 2, 2.5, 0, Math.PI * 2);
-        this.ctx.arc(headX + 4, snakeY - 2, 2.5, 0, Math.PI * 2);
+        this.ctx.moveTo(centerX, currentTopHeight - 30);
+        this.ctx.lineTo(centerX + 26 + wave, currentTopHeight - 24);
+        this.ctx.lineTo(centerX, currentTopHeight - 16);
+        this.ctx.closePath();
         this.ctx.fill();
 
-        // Flickering Forked Tongue 👅
-        const tongueY = snakeY - 10 - Math.abs(Math.sin(obs.time * 0.2)) * 6;
-        this.ctx.strokeStyle = '#dc2626';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(headX, snakeY - 6);
-        this.ctx.lineTo(headX, tongueY);
-        this.ctx.lineTo(headX - 3, tongueY - 4);
-        this.ctx.moveTo(headX, tongueY);
-        this.ctx.lineTo(headX + 3, tongueY - 4);
-        this.ctx.stroke();
-
-        // Emoji accent 🐍
-        this.ctx.font = '24px sans-serif';
+        this.ctx.font = '20px sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('🐍', headX, snakeY + 12);
-
+        this.ctx.fillText('🎉', centerX, currentTopHeight - 2);
         this.ctx.restore();
     }
 
-    drawCrocodile(obs, currentBottomY) {
+    drawSelfieStick(obs, currentTopHeight) {
         this.ctx.save();
-        const x = obs.x;
-        const width = obs.width;
-        const groundY = this.height - this.groundHeight;
-        const centerX = x + width / 2;
-        const crocY = currentBottomY;
-
-        // Scaly Body going down to ground
-        this.ctx.fillStyle = '#166534';
-        this.ctx.fillRect(centerX - 16, crocY + 12, 32, groundY - (crocY + 12));
-
-        // Back Ridges / Spikes
-        this.ctx.fillStyle = '#14532d';
-        for (let spikeY = crocY + 16; spikeY < groundY - 10; spikeY += 12) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(centerX - 16, spikeY);
-            this.ctx.lineTo(centerX - 22, spikeY + 6);
-            this.ctx.lineTo(centerX - 16, spikeY + 12);
-            this.ctx.fill();
-
-            this.ctx.beginPath();
-            this.ctx.moveTo(centerX + 16, spikeY);
-            this.ctx.lineTo(centerX + 22, spikeY + 6);
-            this.ctx.lineTo(centerX + 16, spikeY + 12);
-            this.ctx.fill();
-        }
-
-        // Snapping Mouth
-        const mouthAngle = Math.abs(Math.sin(obs.time * 0.12)) * 10;
-
-        // Head / Jaws
-        this.ctx.fillStyle = '#15803d';
+        const centerX = obs.x + obs.width / 2;
+        this.ctx.strokeStyle = '#475569';
+        this.ctx.lineWidth = 4;
         this.ctx.beginPath();
-        this.drawEllipse(centerX, crocY - mouthAngle / 2, 20, 10, 0);
-        this.ctx.fill();
+        this.ctx.moveTo(centerX - 12, 0);
+        this.ctx.lineTo(centerX + 10, currentTopHeight - 12);
+        this.ctx.stroke();
 
-        // Sharp Teeth
-        this.ctx.fillStyle = '#ffffff';
-        for (let t = -10; t <= 10; t += 5) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(centerX + t, crocY - mouthAngle / 2 + 4);
-            this.ctx.lineTo(centerX + t + 2.5, crocY - mouthAngle / 2 + 9);
-            this.ctx.lineTo(centerX + t + 5, crocY - mouthAngle / 2 + 4);
-            this.ctx.fill();
-        }
-
-        // Yellow Eyes
-        this.ctx.fillStyle = '#facc15';
-        this.ctx.beginPath();
-        this.ctx.arc(centerX - 6, crocY - mouthAngle / 2 - 6, 3.5, 0, Math.PI * 2);
-        this.ctx.arc(centerX + 6, crocY - mouthAngle / 2 - 6, 3.5, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        this.ctx.fillStyle = '#000000';
-        this.ctx.beginPath();
-        this.ctx.arc(centerX - 6, crocY - mouthAngle / 2 - 6, 1.8, 0, Math.PI * 2);
-        this.ctx.arc(centerX + 6, crocY - mouthAngle / 2 - 6, 1.8, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Emoji accent 🐊
-        this.ctx.font = '26px sans-serif';
+        this.ctx.fillStyle = '#111827';
+        this.ctx.fillRect(centerX + 2, currentTopHeight - 22, 14, 10);
+        this.ctx.fillStyle = '#93c5fd';
+        this.ctx.fillRect(centerX + 4, currentTopHeight - 20, 10, 6);
+        this.ctx.font = '18px sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('🐊', centerX, crocY + 14);
-
+        this.ctx.fillText('📱', centerX - 4, currentTopHeight - 3);
         this.ctx.restore();
     }
 
-    drawMosquito(m) {
+    drawRoadBarrier(obs, currentBottomY) {
         this.ctx.save();
-        const currentY = m.y + Math.sin(m.time * m.freq) * m.amp;
-
-        // Buzzing Wing Flap
-        const wingFlap = Math.sin(m.time * 0.8) * 6;
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        this.ctx.lineWidth = 1.5;
-        this.ctx.beginPath();
-        this.drawEllipse(m.x - 2, currentY - 6, 8, Math.abs(4 + wingFlap), -0.3);
-        this.drawEllipse(m.x + 6, currentY - 6, 8, Math.abs(4 - wingFlap), 0.3);
-        this.ctx.stroke();
-
-        // Speed / Sting trail behind mosquito
-        this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(m.x + 8, currentY);
-        this.ctx.lineTo(m.x + 22, currentY);
-        this.ctx.stroke();
-
-        // Mosquito Emoji 🦟
-        this.ctx.font = '22px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('🦟', m.x, currentY);
-
-        this.ctx.restore();
-    }
-
-    drawLindeSMR(obs, currentBottomY) {
-        this.ctx.save();
-        const x = obs.x;
-        const width = obs.width;
-        const groundY = this.height - this.groundHeight;
-        const height = groundY - currentBottomY;
-
-        // Main Reactor Column (Dark Metallic Steel)
-        const colGrad = this.ctx.createLinearGradient(x, 0, x + width, 0);
-        colGrad.addColorStop(0, '#1e293b');
-        colGrad.addColorStop(0.5, '#64748b');
-        colGrad.addColorStop(1, '#0f172a');
-        this.ctx.fillStyle = colGrad;
-        this.ctx.fillRect(x, currentBottomY, width, height);
-
-        // Top Linde Blue Cap
-        this.ctx.fillStyle = '#004077';
-        this.ctx.fillRect(x - 2, currentBottomY, width + 4, 10);
-
-        // Reformer Furnace Glow at bottom
-        const glowY = currentBottomY + height - 24;
-        this.ctx.fillStyle = '#f97316';
-        this.ctx.fillRect(x + 4, glowY, width - 8, 12);
-        this.ctx.fillStyle = '#facc15';
-        this.ctx.fillRect(x + 8, glowY + 2, width - 16, 8);
-
-        // Heat Exchanger Piping
-        this.ctx.strokeStyle = '#00a3e0';
-        this.ctx.lineWidth = 2;
-        for (let py = currentBottomY + 16; py < glowY - 4; py += 14) {
+        const x = obs.x + 3;
+        const w = obs.width - 6;
+        const h = this.height - this.groundHeight - currentBottomY;
+        this.ctx.fillStyle = '#ef4444';
+        this.ctx.fillRect(x, currentBottomY, w, h);
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 3;
+        for (let y = currentBottomY + 6; y < this.height - this.groundHeight; y += 14) {
             this.ctx.beginPath();
-            this.ctx.moveTo(x + 4, py);
-            this.ctx.lineTo(x + width - 4, py);
+            this.ctx.moveTo(x + 4, y);
+            this.ctx.lineTo(x + w - 4, y + 6);
             this.ctx.stroke();
         }
-
-        // Linde Logo Badge
-        this.ctx.fillStyle = '#004077';
-        this.ctx.fillRect(x + 2, currentBottomY + 14, width - 4, 16);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 8px Outfit, sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('LINDE SMR', x + width / 2, currentBottomY + 25);
-
-        // Impact indicator if hit
-        if (obs.hitSMR) {
-            this.ctx.fillStyle = '#ef4444';
-            this.ctx.font = 'bold 10px sans-serif';
-            this.ctx.fillText('💥 -50% H₂', x + width / 2, currentBottomY - 6);
-        }
-
         this.ctx.restore();
     }
 
-    drawH2Station(st) {
+    drawRoadCone(obs, currentBottomY) {
+        this.ctx.save();
+        const centerX = obs.x + obs.width / 2;
+        const groundY = this.height - this.groundHeight;
+        const topY = currentBottomY;
+        this.ctx.fillStyle = '#f97316';
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX, topY);
+        this.ctx.lineTo(centerX - 22, groundY);
+        this.ctx.lineTo(centerX + 22, groundY);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillRect(centerX - 15, topY + 18, 30, 6);
+        this.ctx.restore();
+    }
+
+    drawRoadSign(obs, currentBottomY) {
+        this.ctx.save();
+        const centerX = obs.x + obs.width / 2;
+        const groundY = this.height - this.groundHeight;
+        this.ctx.fillStyle = '#64748b';
+        this.ctx.fillRect(centerX - 4, currentBottomY, 8, groundY - currentBottomY);
+        this.ctx.fillStyle = '#facc15';
+        this.ctx.beginPath();
+        this.drawRoundedRect(centerX - 24, currentBottomY - 2, 48, 26, 6);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#1e293b';
+        this.ctx.font = 'bold 8px Outfit, sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('DEVIATION', centerX, currentBottomY + 14);
+        this.ctx.restore();
+    }
+
+    drawPickup(st) {
         if (!st || st.collected) return;
         this.ctx.save();
 
         const x = st.x;
         const y = st.y;
+        const isBidon = st.type === 'bidon';
 
-        // Glowing Blue/Cyan Frame
-        this.ctx.shadowColor = '#00d2ff';
+        // Glowing pickup frame
+        this.ctx.shadowColor = isBidon ? '#3b82f6' : '#facc15';
         this.ctx.shadowBlur = 10;
 
-        this.ctx.strokeStyle = '#00a3e0';
+        this.ctx.strokeStyle = isBidon ? '#1d4ed8' : '#eab308';
         this.ctx.lineWidth = 2.5;
         this.ctx.strokeRect(x, y, st.width, st.height);
 
-        this.ctx.fillStyle = 'rgba(0, 163, 224, 0.25)';
+        this.ctx.fillStyle = isBidon ? 'rgba(59, 130, 246, 0.25)' : 'rgba(250, 204, 21, 0.25)';
         this.ctx.fillRect(x, y, st.width, st.height);
 
-        // Header Banner
-        this.ctx.fillStyle = '#004077';
+        this.ctx.fillStyle = isBidon ? '#1d4ed8' : '#b45309';
         this.ctx.fillRect(x - 3, y - 8, st.width + 6, 12);
 
         this.ctx.shadowBlur = 0;
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 7.5px Outfit, sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('STATION H2', x + st.width / 2, y + 1);
+        this.ctx.fillText(isBidon ? 'BIDON' : 'GEL', x + st.width / 2, y + 1);
 
-        // Green Fuel Nozzle Icon
-        this.ctx.fillStyle = '#10b981';
-        this.ctx.font = '15px sans-serif';
-        this.ctx.fillText('⛽', x + st.width / 2, y + st.height / 2 + 5);
+        this.ctx.font = '18px sans-serif';
+        this.ctx.fillText(isBidon ? '🧴' : '⚡', x + st.width / 2, y + st.height / 2 + 7);
 
         this.ctx.restore();
     }
@@ -1750,30 +1389,30 @@ class FlappyH2Game {
         this.ctx.save();
         const gY = this.height - this.groundHeight;
 
-        // Jungle Moss / Lush Grass top
-        this.ctx.fillStyle = '#15803d';
+        // Road shoulder
+        this.ctx.fillStyle = '#67a857';
         this.ctx.fillRect(0, gY, this.width, 14);
 
-        // Dark Tropical Soil / Mud
-        this.ctx.fillStyle = '#1c1917';
+        // Main road
+        this.ctx.fillStyle = '#3f3f46';
         this.ctx.fillRect(0, gY + 14, this.width, this.groundHeight - 14);
 
-        // Jungle Roots & Moss highlights
-        this.ctx.strokeStyle = '#16a34a';
+        // Dashed center line
+        this.ctx.strokeStyle = '#f8fafc';
         this.ctx.lineWidth = 3;
-        this.ctx.setLineDash([12, 8]);
+        this.ctx.setLineDash([14, 12]);
         this.ctx.lineDashOffset = -this.groundOffset;
 
         this.ctx.beginPath();
-        this.ctx.moveTo(0, gY + 8);
-        this.ctx.lineTo(this.width, gY + 8);
+        this.ctx.moveTo(0, gY + 38);
+        this.ctx.lineTo(this.width, gY + 38);
         this.ctx.stroke();
 
-        // Exotic flowers / mushrooms along the ground
+        // Spectator confetti dots
         this.ctx.setLineDash([]);
         for (let x = 10; x < this.width; x += 40) {
             const flowerX = (x - this.groundOffset * 2 + this.width * 2) % (this.width + 40) - 20;
-            this.ctx.fillStyle = x % 80 === 0 ? '#f43f5e' : '#eab308';
+            this.ctx.fillStyle = x % 80 === 0 ? '#f43f5e' : '#3b82f6';
             this.ctx.beginPath();
             this.ctx.arc(flowerX, gY + 4, 3, 0, Math.PI * 2);
             this.ctx.fill();
@@ -1782,7 +1421,7 @@ class FlappyH2Game {
         this.ctx.restore();
     }
 
-    drawAirLiquideTruck() {
+    drawCyclist() {
         this.ctx.save();
 
         const t = this.truck;
@@ -1800,61 +1439,36 @@ class FlappyH2Game {
         const x = -t.width / 2;
         const y = -t.height / 2;
 
-        // 1. Hydrogen Tanker Body (Air Liquide Cylinder - White & Blue)
-        const tankWidth = 42;
-        const tankHeight = 26;
-        const tankX = x;
-        const tankY = y + 2;
-
-        // Cylinder background
-        this.ctx.fillStyle = '#ffffff';
+        // Bike frame
+        this.ctx.strokeStyle = '#e11d48';
+        this.ctx.lineWidth = 3;
         this.ctx.beginPath();
-        this.drawRoundedRect(tankX, tankY, tankWidth, tankHeight, 10);
-        this.ctx.fill();
+        this.ctx.moveTo(x + 12, y + 24);
+        this.ctx.lineTo(x + 30, y + 18);
+        this.ctx.lineTo(x + 44, y + 24);
+        this.ctx.lineTo(x + 24, y + 24);
+        this.ctx.lineTo(x + 30, y + 18);
+        this.ctx.stroke();
 
-        // Air Liquide Blue Center Stripe
-        this.ctx.fillStyle = '#004077';
-        this.ctx.fillRect(tankX + 10, tankY, 18, tankHeight);
+        // Wheels
+        this.drawWheel(x + 12, y + 28);
+        this.drawWheel(x + 44, y + 28);
 
-        // Air Liquide Cyan Accent Line
-        this.ctx.fillStyle = '#00a3e0';
-        this.ctx.fillRect(tankX + 28, tankY, 4, tankHeight);
-
-        // H2 Symbol on Tank
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 9px Outfit, sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('H₂', tankX + 19, tankY + 16);
-
-        // 2. Driver Cab (Front)
-        const cabX = tankX + tankWidth - 2;
-        const cabY = tankY + 4;
-        const cabWidth = 24;
-        const cabHeight = 22;
-
-        this.ctx.fillStyle = '#004077';
+        // Handlebar and saddle
+        this.ctx.strokeStyle = '#1f2937';
+        this.ctx.lineWidth = 2;
         this.ctx.beginPath();
-        this.drawRoundedRect(cabX, cabY, cabWidth, cabHeight, [4, 8, 4, 4]);
-        this.ctx.fill();
+        this.ctx.moveTo(x + 44, y + 24);
+        this.ctx.lineTo(x + 50, y + 18);
+        this.ctx.moveTo(x + 26, y + 19);
+        this.ctx.lineTo(x + 20, y + 16);
+        this.ctx.stroke();
 
-        // Windshield / Window
-        this.ctx.fillStyle = '#70c5ce';
-        this.ctx.fillRect(cabX + 8, cabY + 3, 13, 10);
-
-        // 3. Driver: Selected Animal Driver Emoji in Window
-        const driverX = cabX + 14.5;
-        const driverY = cabY + 8;
-
-        this.ctx.font = '10px sans-serif';
+        // Rider emoji
+        this.ctx.font = '16px sans-serif';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.fillText(this.selectedEmoji || '🐼', driverX, driverY);
-
-        // 4. Wheels
-        const wheelY = tankY + tankHeight - 2;
-        this.drawWheel(tankX + 10, wheelY);
-        this.drawWheel(tankX + 30, wheelY);
-        this.drawWheel(cabX + 14, wheelY);
+        this.ctx.fillText(this.selectedEmoji || '🐼', x + 29, y + 10);
 
         this.ctx.restore();
     }
@@ -1886,5 +1500,5 @@ class FlappyH2Game {
 
 // Initialize game on window load
 window.addEventListener('load', () => {
-    new FlappyH2Game();
+    new FlappyTdfGame();
 });

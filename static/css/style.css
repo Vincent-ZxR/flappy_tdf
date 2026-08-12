@@ -1,16 +1,16 @@
 :root {
-    --al-blue-dark: #002b49;
-    --al-blue-primary: #004077;
-    --al-blue-light: #00a3e0;
-    --al-blue-cyan: #00d2ff;
-    --al-red-accent: #e30613;
-    --linde-green: #008751;
-    --linde-blue: #003366;
-    --h2-green: #10b981;
-    --bg-gradient-start: #0f172a;
-    --bg-gradient-end: #1e293b;
+    --al-blue-dark: #15324a;
+    --al-blue-primary: #2f6ea0;
+    --al-blue-light: #ffd23f;
+    --al-blue-cyan: #ffea88;
+    --al-red-accent: #ff5a36;
+    --linde-green: #2ea44f;
+    --linde-blue: #205072;
+    --h2-green: #6abf4b;
+    --bg-gradient-start: #6ec6ff;
+    --bg-gradient-end: #bfe9ff;
     --text-light: #ffffff;
-    --text-dim: #94a3b8;
+    --text-dim: #d7ecff;
 }
 
 * {
@@ -49,12 +49,12 @@ body {
     max-height: min(640px, 98vh);
     background: var(--al-blue-dark);
     border-radius: 18px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 163, 224, 0.2);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35), 0 0 25px rgba(255, 210, 63, 0.35);
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    border: 2px solid rgba(0, 163, 224, 0.3);
+    border: 2px solid rgba(255, 210, 63, 0.5);
 }
 
 .screen-header {
@@ -62,8 +62,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 6px 12px;
-    background: rgba(0, 43, 73, 0.95);
-    border-bottom: 2px solid rgba(0, 163, 224, 0.2);
+    background: rgba(21, 50, 74, 0.96);
+    border-bottom: 2px solid rgba(255, 210, 63, 0.35);
     z-index: 10;
 }
 
@@ -85,7 +85,7 @@ body {
 
 .h2-tag {
     background: var(--al-blue-light);
-    color: #ffffff;
+    color: #3b2f00;
     font-size: 0.75rem;
     font-weight: 800;
     padding: 2px 8px;
@@ -117,7 +117,7 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
-    background: #70c5ce;
+    background: #9dd7ff;
     overflow: hidden;
 }
 
@@ -208,7 +208,7 @@ body {
     background: linear-gradient(90deg, var(--h2-green), var(--al-blue-cyan));
     border-radius: 6px;
     transition: width 0.1s linear, background 0.3s ease;
-    box-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+    box-shadow: 0 0 8px rgba(255, 210, 63, 0.45);
 }
 
 .fuel-bar-fill.warning {
@@ -699,7 +699,7 @@ body {
     white-space: nowrap;
 }
 
-.smr-toast {
+.pickup-toast {
     background: linear-gradient(135deg, #f59e0b, #dc2626) !important;
     box-shadow: 0 4px 15px rgba(220, 38, 38, 0.6) !important;
 }
