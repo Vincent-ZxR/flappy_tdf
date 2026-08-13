@@ -1581,43 +1581,43 @@ class FlappyTdfGame {
         this.ctx.lineTo(x + 21, y + 27);
         this.ctx.stroke();
 
-        // Rider body, a bit more upright than a pure sprinter tuck
+        // Rider body in a more upright road-climbing position
         this.ctx.fillStyle = jersey;
         this.ctx.beginPath();
-        this.ctx.roundRect ? this.ctx.roundRect(x + 18, y + 5, 22, 16, 7) : this.drawRoundedRect(x + 18, y + 5, 22, 16, 7);
+        this.ctx.roundRect ? this.ctx.roundRect(x + 19, y + 2, 19, 17, 7) : this.drawRoundedRect(x + 19, y + 2, 19, 17, 7);
         this.ctx.fill();
         this.ctx.fillStyle = '#cbd5e1';
-        this.ctx.fillRect(x + 23, y + 12, 12, 6);
+        this.ctx.fillRect(x + 24, y + 8, 10, 7);
 
-        // Bent rider pose
+        // Arms and shoulders less stretched to keep the rider higher on the bike
         this.ctx.strokeStyle = '#f1c7ab';
         this.ctx.lineWidth = 4;
         this.ctx.lineCap = 'round';
         this.ctx.beginPath();
-        this.ctx.moveTo(x + 31, y + 16);
-        this.ctx.lineTo(x + 37, y + 18);
-        this.ctx.lineTo(x + 44, y + 17);
+        this.ctx.moveTo(x + 30, y + 13);
+        this.ctx.lineTo(x + 35, y + 15);
+        this.ctx.lineTo(x + 41, y + 15);
         this.ctx.stroke();
 
         // Head / helmet
         this.ctx.fillStyle = '#f1c7ab';
         this.ctx.beginPath();
-        this.ctx.arc(x + 43, y + 9, 6, 0, Math.PI * 2);
+        this.ctx.arc(x + 41, y + 5, 6, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = helmet;
         this.ctx.beginPath();
-        this.ctx.arc(x + 42, y + 7, 6, Math.PI, 0);
+        this.ctx.arc(x + 40, y + 3, 6, Math.PI, 0);
         this.ctx.fill();
         this.ctx.fillStyle = '#111827';
         this.ctx.beginPath();
-        this.ctx.arc(x + 46, y + 10, 1.2, 0, Math.PI * 2);
+        this.ctx.arc(x + 44, y + 6, 1.2, 0, Math.PI * 2);
         this.ctx.fill();
 
         // Team stripe accent on jersey
         this.ctx.fillStyle = '#f8fafc';
-        this.ctx.fillRect(x + 19, y + 10, 20, 2);
+        this.ctx.fillRect(x + 20, y + 7, 17, 2);
         this.ctx.fillStyle = helmet;
-        this.ctx.fillRect(x + 19, y + 13, 20, 2);
+        this.ctx.fillRect(x + 20, y + 10, 17, 2);
 
         this.ctx.restore();
     }
