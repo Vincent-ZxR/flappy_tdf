@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import shutil
 from pathlib import Path
 from urllib import request
 from fastapi import FastAPI, Request, Body
@@ -10,6 +11,30 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 BASE_DIR = Path(__file__).resolve().parent
 
+
+def _resolve_runtime_storage_file(filename: str) -> Path:
+    custom_dir = os.environ.get("LOCAL_STORAGE_DIR", "").strip()
+    if custom_dir:
+        return Path(custom_dir) / filename
+
+    # Serverless environments (like Vercel) expose a writable /tmp directory.
+    if os.environ.get("VERCEL"):
+        return Path("/tmp") / "flappy_tdf" / filename
+
+    return BASE_DIR / filename
+
+
+def _seed_runtime_file_if_needed(runtime_file: Path, bundled_file: Path):
+    if runtime_file == bundled_file:
+        return
+    if runtime_file.exists() or not bundled_file.exists():
+        return
+    try:
+        runtime_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(bundled_file, runtime_file)
+    except Exception as exc:
+        print(f"Could not seed runtime storage file {runtime_file}: {exc}")
+
 app = FastAPI(title="Flappy Velo - Chasse au Maillot Jaune")
 
 # Mount static files directory
@@ -18,8 +43,14 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-SCORES_FILE = BASE_DIR / "scores.json"
-USERS_FILE = BASE_DIR / "users.json"
+BUNDLED_SCORES_FILE = BASE_DIR / "scores.json"
+BUNDLED_USERS_FILE = BASE_DIR / "users.json"
+
+SCORES_FILE = _resolve_runtime_storage_file("scores.json")
+USERS_FILE = _resolve_runtime_storage_file("users.json")
+
+_seed_runtime_file_if_needed(SCORES_FILE, BUNDLED_SCORES_FILE)
+_seed_runtime_file_if_needed(USERS_FILE, BUNDLED_USERS_FILE)
 
 PLAYER_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{8,64}$")
 
@@ -82,6 +113,7 @@ def load_json_data(file_path: Path, default_val):
 
 def save_json_data(file_path: Path, data):
     try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
